@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title>DoX &ndash; Task management, your way.</title>
+        <meta name="title" content="DoX"/>
+        <meta name="description" content="Task management, your way."/>
+        <meta name="author" content="Ollie Terrance"/>
+        <link rel="icon" type="image/png" href="res/check.png"/>
+        <link rel="shortcut icon" type="image/png" href="res/check.png"/>
+        <link type="text/css" rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans|Noto+Serif|Oxygen+Mono"/>
+        <link type="text/css" rel="stylesheet" href="res/style.css"/>
+    </head>
+    <body>
+        <h1>DoX</h1>
+        <h3>Task management, your way.</h3>
+        <p><em>Tl;dr: a task management platform with different applications to suit your needs.  Don't like long blocks of text?  Skip to the <a href="#screenshots">screenshots</a> or <a href="#download">download instructions</a>.</em></p>
+        <p>DoX (as in <strong>do &lt;X&gt;</strong>, where <strong>X</strong> is a task, but also pronouncable like &ldquo;docks&rdquo;) is a task management platform with a unique and readable data storage method.  It aims to be an extensive framework, providing the tools to manage tasks with descriptions, priorities, due dates, automatic repeat and tags.</p>
+        <p>What sets DoX apart from other to-do list platforms is how tasks are stored away.  Tasks are stored in a tasks.txt file in your home folder (~/DoX), and completed tasks in a done.txt file.  Any task can be represented as a single line in the file &ndash; a series of words, phrases or commands, quoted if containing multiple words.</p>
+        <p>An example:</p>
+        <pre>"Washing up" @today|17:00 !1 &amp;daily #Home</pre>
+        <ul>
+            <li>The first word or phrase without a symbol is taken to be the title of the task.</li>
+            <li>A <code>~</code> includes a longer description of the task.</li>
+            <li>A <code>!</code> symbol sets a task's priority, a number between 0 (low) and 3 (high).</li>
+            <li>An <code>@</code> denotes a due date and time for the task, which can be set relatively.</li>
+            <li>An <code>&amp;</code> defines a repetition rule.  This can be a number of days before the task is due again, counting either from task completion, or from the previous due date.</li>
+            <li>A <code>#</code> allows the addition of tags.  A task can have any number of tags.</li>
+        </ul>
+        <p>These files can be edited by hand to make batch changes, or import many tasks at once.  DoX applications can then instantly respond and update to these changes.</p>
+        <h2 id="screenshots">DoXCmd</h2>
+        <h3>Tasks on the command line and terminal.</h3>
+        <img src="res/cmd.png" alt="DoXCmd"/>
+        <p>The command-line application provides both a terminal command and a functional shell for managing tasks.  Commands are designed to be simple but powerful.  Use <code>add</code> followed by a raw task string to instantly add it to your list.  Show and filter the current list of tasks with <code>list</code>, mark complete with <code>done</code>, delete with <code>delete</code>.</p>
+        <h2>DoXTray</h2>
+        <h3>A system tray icon and powerful graphical interface.</h3>
+        <img src="res/tray.png" alt="DoXTray"/>
+        <p>The tray icon provides quick task completion menus, shortcuts to listing and adding tasks, and shows notifications for tasks as they are due.  The grahical interface provides a more simple and intuitive way to interact with your task lists, including sorting and filtering options.</p>
+        <h2>DoX</h2>
+        <h3>An API backbone for 3rd party app development.</h3>
+        <p>The main DoX package is not itself an app; rather, a module for making an app with.  It provides methods for loading and saving task files, and manipulating tasks in all the same ways as the apps currently in development.</p>
+        <p>At the moment, it is only available as a Python class, but as this project expands, it will hopefully be ported to PHP, Java and more.</p>
+        <h2>Roadmap</h2>
+        <h3>Planned features, ideas and future concepts.</h3>
+        <p>Whilst most of the core functionality is ready, there are certainly improvements to be made for usability aspects.  In addition, there are other areas to expand to, such as:</p>
+        <ul>
+            <li>Options and feature customization</li>
+            <li>Online sync, accounts, API and webapp</li>
+            <li>Native Android app (and maybe other platforms)</li>
+        </ul>
+        <p><a href="mailto:ollie.terrance@live.co.uk?subject=DoX%20feature%20suggestions">Suggestions</a> are also welcome.</p>
+        <h2 id="download">Try it</h2>
+        <h3>The latest, bleeding-edge code, available now.</h3>
+        <p>DoX is written in <a href="http://www.python.org/">Python</a>.  Both DoX and DoXCmd have compatibility with Python 2.x and 3.x, however DoXTray requires <a href="http://www.python.org/download/releases/3.3.2/">Python 3.x</a> and <a href="http://www.riverbankcomputing.co.uk/software/pyqt/download">PyQt 4.x</a> (although PyQt 5.x is probably fine too).  DoX is being developed and tested on both Windows and Ubuntu, although it should work fine on Mac too, or on any system supporting Python and PyQt.</p>
+        <p>As DoX is still under heavy development, there are no packaged downloads or installers yet.  All the code for this project is available on <a href="https://github.com/OllieTerrance">GitHub</a> (<a href="https://github.com/OllieTerrance/DoX">DoX</a>, <a href="https://github.com/OllieTerrance/DoXCmd">DoXCmd</a>, <a href="https://github.com/OllieTerrance/DoXTray">DoXTray</a>) to have a look at.  There's also a handy <a href="https://gist.github.com/OllieTerrance/5958418">downloader</a> available for fetching and preparing the necessary files for you.</p>
+        <div id="footer">
+            <iframe src="http://ghbtns.com/github-btn.html?user=OllieTerrance&amp;repo=DoX&amp;type=watch&amp;size=large" style="width: 76px; height: 30px; border: 0;"></iframe>
+            <span>&nbsp;&nbsp;&nbsp;</span>
+            <iframe src="http://ghbtns.com/github-btn.html?user=OllieTerrance&amp;type=follow&amp;size=large" style="width: 215px; height: 30px; border: 0;"></iframe>
+            <span>&nbsp;&nbsp;&nbsp;</span>
+            <iframe src="https://platform.twitter.com/widgets/follow_button.1375828408.html#_=1376685971130&amp;id=twitter-widget-0&amp;lang=en&amp;screen_name=OllieTerrance&amp;show_count=false&amp;show_screen_name=true&amp;size=l" style="width: 185px; height: 29px; border: 0;"></iframe>
+        </div>
+    </body>
+</html>
