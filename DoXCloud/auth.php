@@ -1,10 +1,11 @@
 <?
 require("/home/pi/www/lib/keystore.php");
 $conn = mysqli_connect(keystore("mysql", "db"), keystore("mysql", "user"), keystore("mysql", "pass"), "dox_cloud");
+session_start();
 if ($_POST["submit"]) {
     $email = $_POST["email"];
     $pass = $_POST["pass"];
-    $data = mysqli_query($conn, "SELECT * FROM `users` WHERE `email` = \"" . $email . "\";");
+    $data = mysqli_query($conn, "SELECT * FROM `users` WHERE LOWER(`email`) = \"" . strtolower($email) . "\";");
     $num = mysqli_num_rows($data);
     if ($_POST["submit"] === "login") {
         if ($num) {
@@ -29,9 +30,13 @@ if ($_POST["submit"]) {
         }
     }
     if ($success) {
+        $_SESSION["auth"] = array("email" => $email);
 ?>{ "success": "<? print($success); ?>" }<?
     } elseif ($error) {
 ?>{ "error": "<? print($error); ?>" }<?
     }
+} elseif ($_GET["submit"] === "logout") {
+    session_destroy();
+?>{ "success": "You have been logged out." }<?
 }
 ?>
