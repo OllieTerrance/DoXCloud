@@ -29,7 +29,7 @@
                 $("#authForm input").attr("disabled", "disabled");
                 $("#infobar").html("<div class='infobar'>Just a second...</div>");
                 $.ajax({
-                    url: "auth.php",
+                    url: "/api/auth.php",
                     dataType: "json",
                     method: "POST",
                     data: {

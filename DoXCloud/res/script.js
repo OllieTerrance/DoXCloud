@@ -109,7 +109,7 @@ function modalAdd() {}
 function modalLogout() {
     $("#modalLogoutControls button").prop("disabled", true);
     $.ajax({
-        url: "auth.php",
+        url: "/api/auth.php",
         dataType: "json",
         method: "GET",
         data: {
