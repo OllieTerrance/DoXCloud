@@ -30,7 +30,9 @@ if (!$_SESSION["auth"]) {
                         <span class="icon-bar"></span>
                     </button>
                     <ul class="nav navbar-nav">
-                        <li class="navbar-brand" title="Task management, your way.">DoX</li>
+                        <li title="Task management, your way.">
+                            <a data-target="#tasks" href="./" class="navbar-brand">DoX&nbsp;&nbsp;</a>
+                        </li>
                     </ul>
                 </div>
                 <div class="navbar-collapse collapse">
@@ -81,17 +83,17 @@ if (!$_SESSION["auth"]) {
                         <h4 class="modal-title">Add New Task</h4>
                     </div>
                     <div class="modal-body">
-                        <form class="form-horizontal" role="form">
+                        <form id="modalAddFields" class="form-horizontal" role="form">
                             <div class="form-group">
                                 <label for="modalAddTitle" class="col-lg-2 control-label">Title</label>
                                 <div class="col-lg-10">
-                                    <input id="modalAddTitle" class="form-control" placeholder="Feed the cat"/>
+                                    <input id="modalAddTitle" class="form-control" placeholder="Clean out garage"/>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="modalAddDesc" class="col-lg-2 control-label">Description</label>
                                 <div class="col-lg-10">
-                                    <textarea id="modalAddDesc" class="form-control" placeholder="Bubbles deserves a treat, so make sure to feed him the good chunks."></textarea>
+                                    <textarea id="modalAddDesc" class="form-control" placeholder="Lots of junk to clear &ndash; yard sale?"></textarea>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -127,19 +129,19 @@ if (!$_SESSION["auth"]) {
                             </div>
                             <div class="form-group">
                                 <label for="modalAddRepeatPreset" class="col-lg-2 control-label">Repeat</label>
-                                <div class="col-lg-3">
+                                <div class="col-lg-4">
                                     <select id="modalAddRepeatPreset" class="form-control">
                                         <option>No repeat</option>
-                                        <option>Daily</option>
-                                        <option>Weekly</option>
-                                        <option>Fortnightly</option>
+                                        <option>Every day</option>
+                                        <option>Every week</option>
+                                        <option>Every fortnight</option>
                                         <option>Custom...</option>
                                     </select>
                                 </div>
                                 <div class="col-lg-2">
                                     <input id="modalAddRepeatDays" type="number" class="form-control" min="1" placeholder="n/a" disabled/>
                                 </div>
-                                <div class="col-lg-5">
+                                <div class="col-lg-4">
                                     <select id="modalAddRepeatFrom" class="form-control" disabled>
                                         <option>From completion</option>
                                         <option>From due date</option>
@@ -153,10 +155,45 @@ if (!$_SESSION["auth"]) {
                                 </div>
                             </div>
                         </form>
+                        <form id="modalAddQuick" class="form-horizontal" role="form" style="display: none;">
+                            <div class="form-group">
+                                <div class="col-lg-11">
+                                    <input id="modalAddString" class="form-control" placeholder="&quot;Feed the cat&quot; !2 @tomorrow|13:30 &daily #Home #Cat"/>
+                                </div>
+                                <div class="col-lg-1 control-label">
+                                    <a data-toggle="modal" data-target="#modalHowToWrite" href="#howToWrite">Help?</a>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" onclick="modalAdd();">Add Task</button>
+                        <button id="modalAddToggle" type="button" class="btn btn-info" onclick="modalAddToggle();">Quick Add</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="modalHowToWrite" class="modal fade">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Quick Add Explained</h4>
+                    </div>
+                    <div class="modal-body">
+                        <ul>
+                            <li>The first word or phrase without a symbol is taken to be the task title.</li>
+                            <li>A <code>~</code> includes a longer description of the task.</li>
+                            <li>A <code>!</code> symbol sets a task's priority, a number between 0 (low) and 3 (high).</li>
+                            <li>An <code>@</code> denotes a due date and time for the task.  This can be a date, or a date and time.  Write it as <code>date|time</code>.</li>
+                            <li>An <code>&amp;</code> defines a repetition rule.  This can be a number of days before the task is due again, counting by default from task completion, or from the previous due date by adding <code>*</code> after the number of days.</li>
+                            <li>A <code>#</code> adds a tag.  A task can have any number of tags.</li>
+                            <li>If any part contains spaces, wrap the whole part in double quotes.</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Ok</button>
                     </div>
                 </div>
             </div>

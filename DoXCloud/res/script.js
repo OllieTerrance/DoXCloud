@@ -4,7 +4,7 @@ $(document).ready(function() {
     };
     $("#tabList li a").on("click", function() {
         var id = this.hash.substr(1);
-        $("#tabs li").map(function(index, item) {
+        $("#tabList li").map(function(index, item) {
             if (item.id.substr(3).toLowerCase() === id) {
                 $(item).addClass("active");
             } else {
@@ -56,11 +56,11 @@ $(document).ready(function() {
         var val = this.value;
         if (val === "No repeat") {
             $("#modalAddRepeatDays").val("");
-        } else if (val === "Daily") {
+        } else if (val === "Every day") {
             $("#modalAddRepeatDays").val("1");
-        } else if (val === "Weekly") {
+        } else if (val === "Every week") {
             $("#modalAddRepeatDays").val("7");
-        } else if (val === "Fortnightly") {
+        } else if (val === "Every fortnight") {
             $("#modalAddRepeatDays").val("14");
         }
         if (val === "Custom...") {
@@ -88,6 +88,23 @@ $(document).ready(function() {
         $("#modalAddTags").importTags("");
     });
 });
+function modalAddToggle() {
+    if ($("#modalAddFields").prop("style").display === "none") {
+        $("#modalAddQuick").prop("style").display = "none";
+        $("#modalAddFields").prop("style").display = "block";
+        $("#modalAddToggle").html("Quick Add");
+        setTimeout(function() {
+            $("#modalAddString").focus();
+        }, 50);
+    } else {
+        $("#modalAddFields").prop("style").display = "none";
+        $("#modalAddQuick").prop("style").display = "block";
+        $("#modalAddToggle").html("Show Fields");
+        setTimeout(function() {
+            $("#modalAddTitle").focus();
+        }, 50);
+    }
+}
 function modalAdd() {}
 function modalLogout() {
     $("#modalLogoutControls button").prop("disabled", true);
