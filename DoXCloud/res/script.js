@@ -106,8 +106,46 @@ $(document).ready(function() {
         $("#modalAddTags").importTags("");
     });
 });
+function Task(params) {
+    if (!params) {
+        params = {}
+    }
+    this.title = params.title;
+    this.desc = params.desc;
+    this.pri = params.pri;
+    this.due = params.due;
+    this.repeat = params.repeat;
+    this.tags = params.tags;
+}
+Task.prototype = {
+    constructor: Task,
+    formatDue: function() {
+        if (this.due) {
+            return this.due.date.format(this.due.time ? "dd/mm/yyyy HH:MM:SS" : "dd/mm/yyyy");
+        }
+    },
+    formatRepeat: function() {
+        if (this.repeat) {
+            var out = "";
+            switch (this.repeat.days) {
+                case 1:
+                    out = "Daily";
+                    break;
+                case 7:
+                    out = "Weekly";
+                    break;
+                case 14:
+                    out = "Fortnightly";
+                    break;
+                default:
+                    out = "Every " + this.repeat.days + " days";
+            }
+            return out + " from " + (this.repeat.fromCompletion ? "completion" : "due date");
+        }
+    }
+}
 var tasks = [
-    {
+    new Task({
         title: "Test Task",
         desc: "This is an example task.",
         pri: 2,
@@ -120,15 +158,15 @@ var tasks = [
             fromCompletion: true
         },
         tags: ["Test"]
-    },
-    {
+    }),
+    new Task({
         title: "Another Test Task",
         desc: "This is an additional example task.",
         pri: 1,
         due: false,
         repeat: false,
         tags: ["Test", "Again"]
-    }
+    })
 ];
 function listRefresh() {
     $("#listTasks tbody").children().map(function(index, item) {
@@ -144,8 +182,8 @@ function listRefresh() {
                 row.append($("<td>" + (parseInt(i) + 1) + "</td>"));
                 row.append($("<td>" + task.title + "</td>"));
                 row.append($("<td>" + task.pri + "</td>"));
-                row.append($("<td>" + (task.due ? task.due.date.format("dd/mm/yyyy " + (task.due.time ? "HH:MM:SS" : "")) : "<em>None</em>") + "</td>"));
-                row.append($("<td>" + (task.repeat ? "Every " + task.repeat.days + " day(s) from " + (task.repeat.fromCompletion ? "completion" : "due date") : "<em>None</em>") + "</td>"));
+                row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
+                row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
                 row.append($("<td>" + (task.tags.length ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
                 $("#listTasks").append(row);
             }
