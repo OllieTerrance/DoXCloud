@@ -18,6 +18,11 @@ if (!$_SESSION["auth"]) {
         <link type="text/css" rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans|Noto+Serif|Oxygen+Mono"/>
         <link type="text/css" rel="stylesheet" href="res/bootstrap.min.css"/>
         <link type="text/css" rel="stylesheet" href="res/jquery.tagsinput.css"/>
+        <style type="text/css">
+        body {
+            padding-top: 68px;
+        }
+        </style>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     </head>
     <body>
@@ -74,6 +79,21 @@ if (!$_SESSION["auth"]) {
                     </ul>
                 </div>
             </div>
+        </div>
+        <div class="container">
+            <table id="listTasks" class="table table-bordered table-striped">
+                <tr id="listTasksHead">
+                    <th>#</th>
+                    <th>Task</th>
+                    <th>Priority</th>
+                    <th>Due</th>
+                    <th>Repeat</th>
+                    <th>Tags</th>
+                </tr>
+                <tr id="listTasksEmpty">
+                    <td colspan="6">No tasks to show.</td>
+                </tr>
+            </table>
         </div>
         <div id="modalAdd" class="modal fade">
             <div class="modal-dialog">

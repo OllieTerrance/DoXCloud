@@ -88,6 +88,48 @@ $(document).ready(function() {
         $("#modalAddTags").importTags("");
     });
 });
+var tasks = [
+    {
+        title: "Test Task",
+        desc: "This is an example task.",
+        pri: 2,
+        due: {
+            date: new Date(1377000000),
+            time: true
+        },
+        repeat: {
+            days: 7,
+            fromCompletion: true
+        },
+        tags: ["Test"]
+    }
+];
+function listRefresh() {
+    $("#listTasks tbody").children().map(function(index, item) {
+        if (item.id !== "listTasksHead") {
+            item.remove();
+        }
+    });
+    if (tasks.length) {
+        for (var i in tasks) {
+            if (tasks.hasOwnProperty(i)) {
+                var task = tasks[i];
+                var row = $("<tr/>");
+                row.append($("<td>" + (parseInt(i) + 1) + "</td>"));
+                row.append($("<td>" + task.title + "</td>"));
+                row.append($("<td>" + task.pri + "</td>"));
+                row.append($("<td>" + task.due + "</td>"));
+                row.append($("<td>" + task.repeat + "</td>"));
+                row.append($("<td>" + task.tags.join(", ") + "</td>"));
+                $("#listTasks").append(row);
+            }
+        }
+    } else {
+        var row = $("<tr/>");
+        row.append($("<td colspan='6'>No tasks to show.</td>"));
+        $("#listTasks").append(row);
+    }
+}
 function modalAddToggle() {
     if ($("#modalAddFields").prop("style").display === "none") {
         $("#modalAddQuick").prop("style").display = "none";
