@@ -2,6 +2,24 @@ $(document).ready(function() {
     Array.prototype.has = function(item) {
         return this.indexOf(item) >= 0;
     };
+    Date.prototype.format = function(pattern) {
+        if (!pattern) pattern = "dd/mm/yyyy HH:MM:SS";
+        function pad(n) {
+            return n < 10 ? "0" + n : n;
+        }
+        return pattern.split("yyyy").join(this.getFullYear())
+                      .split("yy").join(this.getFullYear().toString().substring(2))
+                      .split("mm").join(pad(this.getMonth() + 1))
+                      .split("m").join(this.getMonth() + 1)
+                      .split("dd").join(pad(this.getDate()))
+                      .split("d").join(this.getDate())
+                      .split("HH").join(pad(this.getHours()))
+                      .split("H").join(this.getHours())
+                      .split("MM").join(pad(this.getMinutes()))
+                      .split("M").join(this.getMinutes())
+                      .split("SS").join(pad(this.getSeconds()))
+                      .split("S").join(this.getSeconds());
+    }
     $("#tabList li a").on("click", function() {
         var id = this.hash.substr(1);
         $("#tabList li").map(function(index, item) {
@@ -94,14 +112,22 @@ var tasks = [
         desc: "This is an example task.",
         pri: 2,
         due: {
-            date: new Date(1377000000),
-            time: true
+            date: new Date(1376953200000),
+            time: false
         },
         repeat: {
             days: 7,
             fromCompletion: true
         },
         tags: ["Test"]
+    },
+    {
+        title: "Another Test Task",
+        desc: "This is an additional example task.",
+        pri: 1,
+        due: false,
+        repeat: false,
+        tags: ["Test", "Again"]
     }
 ];
 function listRefresh() {
@@ -118,9 +144,9 @@ function listRefresh() {
                 row.append($("<td>" + (parseInt(i) + 1) + "</td>"));
                 row.append($("<td>" + task.title + "</td>"));
                 row.append($("<td>" + task.pri + "</td>"));
-                row.append($("<td>" + task.due + "</td>"));
-                row.append($("<td>" + task.repeat + "</td>"));
-                row.append($("<td>" + task.tags.join(", ") + "</td>"));
+                row.append($("<td>" + (task.due ? task.due.date.format("dd/mm/yyyy " + (task.due.time ? "HH:MM:SS" : "")) : "<em>None</em>") + "</td>"));
+                row.append($("<td>" + (task.repeat ? "Every " + task.repeat.days + " day(s) from " + (task.repeat.fromCompletion ? "completion" : "due date") : "<em>None</em>") + "</td>"));
+                row.append($("<td>" + (task.tags.length ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
                 $("#listTasks").append(row);
             }
         }
