@@ -163,8 +163,8 @@ if (!$_SESSION["auth"]) {
                                 </div>
                                 <div class="col-lg-4">
                                     <select id="modalAddRepeatFrom" class="form-control" disabled>
-                                        <option value="completion">From completion</option>
                                         <option value="due">From due date</option>
+                                        <option value="completion">From completion</option>
                                     </select>
                                 </div>
                             </div>

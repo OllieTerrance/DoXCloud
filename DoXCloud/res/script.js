@@ -97,12 +97,12 @@ $(document).ready(function() {
         $("#modalAddTitle").val("");
         $("#modalAddDesc").val("");
         $("#modalAddPri").val("0");
-        $("#modalAddDuePreset").val("Not due");
+        $("#modalAddDuePreset").val("none");
         $("#modalAddDueDate").val("");
         $("#modalAddDueTime").val("");
-        $("#modalAddRepeatPreset").val("No repeat");
-        $("#modalAddRepeatDays").val("No repeat");
-        $("#modalAddRepeatFrom").val("From completion");
+        $("#modalAddRepeatPreset").val("none");
+        $("#modalAddRepeatDays").val("");
+        $("#modalAddRepeatFrom").val("completion");
         $("#modalAddTags").importTags("");
     });
     listRefresh();
@@ -111,25 +111,48 @@ function shlex(str) {
     var args = str.split(" ");
     var out = [];
     var lookForClose = -1;
+    var quoteOpen = false;
     for (var x in args) {
         if (args.hasOwnProperty(x)) {
             var arg = args[x];
-            if (lookForClose >= 0) {
-                if (arg.indexOf("\"") >= 0 && arg.charAt(arg.indexOf("\"") - 1) !== "\\") {
-                    var block = args.slice(lookForClose, parseInt(x) + 1).join(" ");
-                    out.push(block.substr(1, block.length - 2).replace(/\\\"/g, "\"").replace(/\\\\/g, "\\"));
-                    lookForClose = -1;
+            var escSeq = false;
+            for (var y in arg) {
+                if (escSeq) {
+                    escSeq = false;
+                } else if (arg[y] === "\\") {
+                    escSeq = true;
+                } else if (arg[y] === "\"") {
+                    quoteOpen = !quoteOpen;
                 }
-            } else {
-                if (arg.indexOf("\"") === 0) {
-                    lookForClose = x;
-                } else {
-                    out.push(arg);
+            }
+            if (!quoteOpen && lookForClose === -1) {
+                out.push(arg);
+            } else if (quoteOpen && lookForClose === -1) {
+                lookForClose = x;
+            } else if (!quoteOpen && lookForClose >= 0) {
+                var block = args.slice(lookForClose, parseInt(x) + 1).join(" ");
+                var escSeq = false;
+                var quotes = [];
+                for (var y in block) {
+                    if (escSeq) {
+                        escSeq = false;
+                    } else if (block[y] === "\\") {
+                        escSeq = true;
+                    } else if (block[y] === "\"") {
+                        quotes.push(y);
+                    }
                 }
+                var parts = [];
+                parts.push(block.substr(0, quotes[0]));
+                parts.push(block.substr(parseInt(quotes[0]) + 1, quotes[1] - (parseInt(quotes[0]) + 1)));
+                parts.push(block.substr(parseInt(quotes[1]) + 1));
+                block = parts.join("");
+                out.push(block);
+                lookForClose = -1;
             }
         }
     }
-    return out;
+    return quoteOpen ? false : out;
 }
 function Task(params) {
     if (!params) {
@@ -165,7 +188,7 @@ Task.prototype = {
                 default:
                     out = "Every " + this.repeat.days + " days";
             }
-            return out + " from " + (this.repeat.fromCompletion ? "completion" : "due date");
+            return out + " from " + (this.repeat.fromDue ? "due date" : "completion");
         }
     }
 }
@@ -180,7 +203,7 @@ var tasks = [
         },
         repeat: {
             days: 7,
-            fromCompletion: true
+            fromDue: true
         },
         tags: ["Test"]
     }),
@@ -238,68 +261,141 @@ function modalAddToggle() {
 }
 function modalAdd() {
     if ($("#modalAddFields").prop("style").display === "none") {
-        // handle quick add
+        var args = shlex($("#modalAddString").val());
+        var params = {
+            title: "",
+            desc: "",
+            pri: 0,
+            due: false,
+            repeat: false,
+            tags: []
+        };
+        needTitle = true;
+        for (var x in args) {
+            if (args.hasOwnProperty(x)) {
+                var arg = args[x];
+                if (arg.match(/^\$[0-9a-f]{5}$/)) {
+                    params.id = arg.substr(1);
+                } else if (arg[0] === "~" && arg.length > 1) {
+                    params.desc = arg.substr(1).replace("|", "\n");
+                } else if (arg.match(/^![0-3]$/)) {
+                    params.pri = parseInt(arg[1]);
+                } else if (arg.match(/!{1,3}$/)) {
+                    params.pri = arg.length;
+                } else if (arg === "0") {
+                    params.pri = 0;
+                } else if (arg[0] === "@" && arg.length > 1) {
+                    keywords = arg.substr(1).split("|");
+                    if (keywords.length === 1) {
+                        keywords.push("");
+                    }
+                    // parse date/time keywords
+                } else if (arg[0] === "&" && arg.length > 1) {
+                    var days = arg.substr(1);
+                    var fromDue = true;
+                    if (days[days.length - 1] === "*") {
+                        days = days.substr(0, days.length - 1);
+                        fromDue = false;
+                    }
+                    if (["daily", "day", "every day"].has(days)) {
+                        days = 1;
+                    } else if (["weekly", "week"].has(days)) {
+                        days = 7;
+                    } else if (["fortnightly", "fortnight", "2 weeks"].has(days)) {
+                        days = 14;
+                    } else {
+                        try {
+                            days = parseInt(days);
+                            if (days <= 0) {
+                                days = false;
+                            }
+                        } catch (error) {
+                            days = false;
+                        }
+                    }
+                    if (days) {
+                        params.repeat = {
+                            days: days,
+                            fromDue: fromDue
+                        };
+                    }
+                } else if (arg[0] === "#" && arg.length > 1) {
+                    tag = arg.substr(1);
+                    if (!params.tags.has(tag.toLowerCase(), true)) {
+                        params.tags.push(tag);
+                    }
+                } else if (needTitle) {
+                    params.title = arg;
+                    needTitle = false;
+                }
+            }
+        }
+        if (params.repeat && !params.due) {
+            params.due = {
+                date: new Date(),
+                time: false
+            };
+            params.due.date.setHours(0);
+            params.due.date.setMinutes(0);
+            params.due.date.setSeconds(0);
+        }
+        tasks.push(new Task(params));
     } else {
-        var title = $("#modalAddTitle").val();
-        var desc = $("#modalAddDesc").val();
-        var pri = parseInt($("#modalAddPri").val());
-        var due = {
-            date: new Date(),
-            time: false
+        var params = {
+            title: $("#modalAddTitle").val(),
+            desc: $("#modalAddDesc").val(),
+            pri: parseInt($("#modalAddPri").val()),
+            due: {
+                date: new Date(),
+                time: false
+            },
+            repeat: {
+                days: 1,
+                fromDue: $("#modalAddRepeatFrom").val() === "due"
+            },
+            tags: $("#modalAddTags").val().split(",")
         };
         switch ($("#modalAddDuePreset").val()) {
             case "none":
-                due = false;
+                params.due = false;
                 break;
             case "now":
-                due.time = true;
+                params.due.time = true;
                 break;
             case "yesterday":
-                due.date.setDate(due.date.getDate() - 1);
+                params.due.date.setDate(params.due.date.getDate() - 1);
                 break;
             case "tomorrow":
-                due.date.setDate(due.date.getDate() + 1);
+                params.due.date.setDate(params.due.date.getDate() + 1);
                 break;
             case "week":
-                due.date.setDate(due.date.getDate() + 1);
+                params.due.date.setDate(params.due.date.getDate() + 1);
                 break;
             case "custom":
-                due.date = new Date($("#modalAddDueDate").val() + " " + $("#modalAddDueTime").val());
-                due.time = !!$("#modalAddDueTime").val();
+                params.due.date = new Date($("#modalAddDueDate").val() + " " + $("#modalAddDueTime").val());
+                params.due.time = !!$("#modalAddDueTime").val();
                 break;
         }
-        if (due && !due.time) {
-            due.date.setHours(0);
-            due.date.setMinutes(0);
-            due.date.setSeconds(0);
+        if (params.due && !params.due.time) {
+            params.due.date.setHours(0);
+            params.due.date.setMinutes(0);
+            params.due.date.setSeconds(0);
         }
-        var repeat = {
-            days: 1,
-            fromCompletion: $("#modalAddRepeatFrom").val() === "completion"
-        };
         switch ($("#modalAddRepeatPreset").val()) {
             case "none":
-                repeat = false;
+                params.repeat = false;
                 break;
             case "week":
-                repeat.days = 7;
+                params.repeat.days = 7;
                 break;
             case "fortnight":
-                repeat.days = 14;
+                params.repeat.days = 14;
                 break;
             case "custom":
-                repeat.days = parseInt($("#modalAddRepeatDays").val());
+                params.repeat.days = parseInt($("#modalAddRepeatDays").val());
                 break;
         }
-        var tags = $("#modalAddTags").val().split(",");
-        tasks.push(new Task({
-            title: title,
-            desc: desc,
-            pri: pri,
-            due: due,
-            repeat: repeat,
-            tags: tags
-        }));
+        tasks.push(new Task(params));
     }
     $("#modalAdd").modal("hide");
     listRefresh();
