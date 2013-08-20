@@ -44,25 +44,25 @@ $(document).ready(function() {
     $("#modalAddDuePreset").on("change", function(e) {
         var newDate = new Date();
         var val = this.value;
-        if (["Yesterday", "Today", "Now", "Tomorrow", "Next week"].has(val)) {
-            if (val === "Now") {
+        if (["yesterday", "today", "now", "tomorrow", "week"].has(val)) {
+            if (val === "now") {
                 $("#modalAddDueTime").val(newDate.toISOString().substr(11, 8));
             } else {
                 $("#modalAddDueTime").val("");
-                if (val === "Yesterday") {
+                if (val === "yesterday") {
                     newDate.setDate(newDate.getDate() - 1);
-                } else if (val === "Tomorrow") {
+                } else if (val === "tomorrow") {
                     newDate.setDate(newDate.getDate() + 1);
-                } else if (val === "Next week") {
+                } else if (val === "week") {
                     newDate.setDate(newDate.getDate() + 7);
                 }
             }
             $("#modalAddDueDate").val(newDate.toISOString().substr(0, 10));
-        } else if (val === "Not due") {
+        } else if (val === "none") {
             $("#modalAddDueDate").val("");
             $("#modalAddDueTime").val("");
         }
-        if (val === "Custom...") {
+        if (val === "custom") {
             $("#modalAddDueDate").removeAttr("disabled");
             $("#modalAddDueTime").removeAttr("disabled");
         } else {
@@ -72,21 +72,21 @@ $(document).ready(function() {
     });
     $("#modalAddRepeatPreset").on("change", function(e) {
         var val = this.value;
-        if (val === "No repeat") {
+        if (val === "none") {
             $("#modalAddRepeatDays").val("");
-        } else if (val === "Every day") {
+        } else if (val === "day") {
             $("#modalAddRepeatDays").val("1");
-        } else if (val === "Every week") {
+        } else if (val === "week") {
             $("#modalAddRepeatDays").val("7");
-        } else if (val === "Every fortnight") {
+        } else if (val === "fortnight") {
             $("#modalAddRepeatDays").val("14");
         }
-        if (val === "Custom...") {
+        if (val === "custom") {
             $("#modalAddRepeatDays").removeAttr("disabled");
             $("#modalAddRepeatFrom").removeAttr("disabled");
         } else {
             $("#modalAddRepeatDays").attr("disabled", "disabled");
-            if (val === "No repeat") {
+            if (val === "none") {
                 $("#modalAddRepeatFrom").attr("disabled", "disabled");
             } else {
                 $("#modalAddRepeatFrom").removeAttr("disabled");
@@ -105,6 +105,7 @@ $(document).ready(function() {
         $("#modalAddRepeatFrom").val("From completion");
         $("#modalAddTags").importTags("");
     });
+    listRefresh();
 });
 function Task(params) {
     if (!params) {
@@ -211,7 +212,74 @@ function modalAddToggle() {
         }, 50);
     }
 }
-function modalAdd() {}
+function modalAdd() {
+    if ($("#modalAddFields").prop("style").display === "none") {
+        // handle quick add
+    } else {
+        var title = $("#modalAddTitle").val();
+        var desc = $("#modalAddDesc").val();
+        var pri = parseInt($("#modalAddPri").val());
+        var due = {
+            date: new Date(),
+            time: false
+        };
+        switch ($("#modalAddDuePreset").val()) {
+            case "none":
+                due = false;
+                break;
+            case "now":
+                due.time = true;
+                break;
+            case "yesterday":
+                due.date.setDate(due.date.getDate() - 1);
+                break;
+            case "tomorrow":
+                due.date.setDate(due.date.getDate() + 1);
+                break;
+            case "week":
+                due.date.setDate(due.date.getDate() + 1);
+                break;
+            case "custom":
+                due.date = new Date($("#modalAddDueDate").val() + " " + $("#modalAddDueTime").val());
+                due.time = !!$("#modalAddDueTime").val();
+                break;
+        }
+        if (due && !due.time) {
+            due.date.setHours(0);
+            due.date.setMinutes(0);
+            due.date.setSeconds(0);
+        }
+        var repeat = {
+            days: 1,
+            fromCompletion: $("#modalAddRepeatFrom").val() === "completion"
+        };
+        switch ($("#modalAddRepeatPreset").val()) {
+            case "none":
+                repeat = false;
+                break;
+            case "week":
+                repeat.days = 7;
+                break;
+            case "fortnight":
+                repeat.days = 14;
+                break;
+            case "custom":
+                repeat.days = parseInt($("#modalAddRepeatDays").val());
+                break;
+        }
+        var tags = $("#modalAddTags").val().split(",");
+        tasks.push(new Task({
+            title: title,
+            desc: desc,
+            pri: pri,
+            due: due,
+            repeat: repeat,
+            tags: tags
+        }));
+    }
+    $("#modalAdd").modal("hide");
+    listRefresh();
+}
 function modalLogout() {
     $("#modalLogoutControls button").prop("disabled", true);
     $.ajax({

@@ -131,13 +131,13 @@ if (!$_SESSION["auth"]) {
                                 <label for="modalAddDuePreset" class="col-lg-2 control-label">Due</label>
                                 <div class="col-lg-3">
                                     <select id="modalAddDuePreset" class="form-control">
-                                        <option>Not due</option>
-                                        <option>Today</option>
-                                        <option>Now</option>
-                                        <option>Yesterday</option>
-                                        <option>Tomorrow</option>
-                                        <option>Next week</option>
-                                        <option>Custom...</option>
+                                        <option value="none">Not due</option>
+                                        <option value="today">Today</option>
+                                        <option value="now">Now</option>
+                                        <option value="yesterday">Yesterday</option>
+                                        <option value="tomorrow">Tomorrow</option>
+                                        <option value="week">Next week</option>
+                                        <option value="custom">Custom...</option>
                                     </select>
                                 </div>
                                 <div class="col-lg-4">
@@ -151,11 +151,11 @@ if (!$_SESSION["auth"]) {
                                 <label for="modalAddRepeatPreset" class="col-lg-2 control-label">Repeat</label>
                                 <div class="col-lg-4">
                                     <select id="modalAddRepeatPreset" class="form-control">
-                                        <option>No repeat</option>
-                                        <option>Every day</option>
-                                        <option>Every week</option>
-                                        <option>Every fortnight</option>
-                                        <option>Custom...</option>
+                                        <option value="none">No repeat</option>
+                                        <option value="day">Every day</option>
+                                        <option value="week">Every week</option>
+                                        <option value="fortnight">Every fortnight</option>
+                                        <option value="custom">Custom...</option>
                                     </select>
                                 </div>
                                 <div class="col-lg-2">
@@ -163,8 +163,8 @@ if (!$_SESSION["auth"]) {
                                 </div>
                                 <div class="col-lg-4">
                                     <select id="modalAddRepeatFrom" class="form-control" disabled>
-                                        <option>From completion</option>
-                                        <option>From due date</option>
+                                        <option value="completion">From completion</option>
+                                        <option value="due">From due date</option>
                                     </select>
                                 </div>
                             </div>
