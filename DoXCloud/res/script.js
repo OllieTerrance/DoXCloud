@@ -186,6 +186,194 @@ $(document).ready(function() {
             }
         }
     });
+    // toggle between all fields and quick add on add task window
+    $("#modalAddToggle").on("click", function(e) {
+        if ($("#modalAddFields").prop("style").display === "none") {
+            // hide quick add, show fields
+            $("#modalAddQuick").prop("style").display = "none";
+            $("#modalAddFields").prop("style").display = "block";
+            $("#modalAddToggle").html("Quick Add");
+            $("#modalAddString").focus();
+        } else {
+            // hide fields, show quick add
+            $("#modalAddFields").prop("style").display = "none";
+            $("#modalAddQuick").prop("style").display = "block";
+            $("#modalAddToggle").html("Show Fields");
+            $("#modalAddTitle").focus();
+        }
+    });
+    // handler for confirming add task window
+    $("#modalAddSave").on("click", function(e) {
+        // using quick add
+        if ($("#modalAddFields").prop("style").display === "none") {
+            // shlex parse the string
+            var args = $("#modalAddString").val().shlex();
+            // skeleton task params
+            var params = {
+                title: "",
+                desc: "",
+                pri: 0,
+                due: false,
+                repeat: false,
+                tags: []
+            };
+            // first generic parameter regarded as task title
+            needTitle = true;
+            for (var x in args) {
+                // ignore prototype methods
+                if (args.hasOwnProperty(x)) {
+                    var arg = args[x];
+                    // $ identifier (hex)
+                    if (arg.match(/^\$[0-9a-f]{5}$/)) {
+                        params.id = arg.substr(1);
+                    // ~ description
+                    } else if (arg[0] === "~" && arg.length > 1) {
+                        params.desc = arg.substr(1).replace("|", "\n");
+                    // ! priority (numerical)
+                    } else if (arg.match(/^![0-3]$/)) {
+                        params.pri = parseInt(arg[1]);
+                    // ! priority (bang)
+                    } else if (arg.match(/!{1,3}$/)) {
+                        params.pri = arg.length;
+                    // 0 (zero) priority
+                    } else if (arg === "0") {
+                        params.pri = 0;
+                    // @ due date
+                    } else if (arg[0] === "@" && arg.length > 1) {
+                        keywords = arg.substr(1).split("|");
+                        if (keywords.length === 1) {
+                            keywords.push("");
+                        }
+                        // parse date/time keywords
+                    // & repeat
+                    } else if (arg[0] === "&" && arg.length > 1) {
+                        var days = arg.substr(1);
+                        var fromDue = true;
+                        // repeat from completion instead of due date
+                        if (days[days.length - 1] === "*") {
+                            days = days.substr(0, days.length - 1);
+                            fromDue = false;
+                        }
+                        // aliases
+                        if (["daily", "day", "every day"].has(days)) {
+                            days = 1;
+                        } else if (["weekly", "week"].has(days)) {
+                            days = 7;
+                        } else if (["fortnightly", "fortnight", "2 weeks"].has(days)) {
+                            days = 14;
+                        } else {
+                            // no matches, treat as an integer
+                            days = parseInt(days);
+                            if (isNaN(days) || days <= 0) {
+                                days = false;
+                            }
+                        }
+                        if (days) {
+                            params.repeat = {
+                                days: days,
+                                fromDue: fromDue
+                            };
+                        }
+                    // # tags
+                    } else if (arg[0] === "#" && arg.length > 1) {
+                        tag = arg.substr(1);
+                        if (!params.tags.has(tag.toLowerCase(), true)) {
+                            params.tags.push(tag);
+                        }
+                    // generic
+                    } else if (needTitle) {
+                        params.title = arg;
+                        needTitle = false;
+                    }
+                }
+            }
+            // can't repeat without due date
+            if (params.repeat && !params.due) {
+                params.due = {
+                    date: new Date(),
+                    time: false
+                };
+                params.due.date.setHours(0);
+                params.due.date.setMinutes(0);
+                params.due.date.setSeconds(0);
+            }
+            // add new task
+            tasks.push(new Task(params));
+        // using all fields
+        } else {
+            // fill in basic details
+            var params = {
+                title: $("#modalAddTitle").val(),
+                desc: $("#modalAddDesc").val(),
+                pri: parseInt($("#modalAddPri").val()),
+                due: {
+                    date: new Date(),
+                    time: false
+                },
+                repeat: {
+                    days: 1,
+                    fromDue: $("#modalAddRepeatFrom").val() === "due"
+                },
+                tags: $("#modalAddTags").val().split(",")
+            };
+            // use preset values for due date
+            switch ($("#modalAddDuePreset").val()) {
+                case "none":
+                    params.due = false;
+                    break;
+                case "now":
+                    params.due.time = true;
+                    break;
+                case "yesterday":
+                    params.due.date.setDate(params.due.date.getDate() - 1);
+                    break;
+                case "tomorrow":
+                    params.due.date.setDate(params.due.date.getDate() + 1);
+                    break;
+                case "week":
+                    params.due.date.setDate(params.due.date.getDate() + 1);
+                    break;
+                case "custom":
+                    // custom due date, read fields
+                    params.due.date = new Date($("#modalAddDueDate").val() + " " + $("#modalAddDueTime").val());
+                    // !! converts to boolean (true if value is truthy)
+                    params.due.time = !!$("#modalAddDueTime").val();
+                    break;
+            }
+            // due date but no time
+            if (params.due && !params.due.time) {
+                // clear time values
+                params.due.date.setHours(0);
+                params.due.date.setMinutes(0);
+                params.due.date.setSeconds(0);
+            }
+            // use preset valus for repeat
+            switch ($("#modalAddRepeatPreset").val()) {
+                case "none":
+                    params.repeat = false;
+                    break;
+                case "week":
+                    params.repeat.days = 7;
+                    break;
+                case "fortnight":
+                    params.repeat.days = 14;
+                    break;
+                case "custom":
+                    // custom due date, read field
+                    params.repeat.days = parseInt($("#modalAddRepeatDays").val());
+                    if (params.repeat.days < 1) {
+                        params.repeat = false;
+                    }
+                    break;
+            }
+            // add new field
+            tasks.push(new Task(params));
+        }
+        // close add task window
+        $("#modalAdd").modal("hide");
+        // refresh the list
+        listRefresh();
+    });
     // form reset handler on modal close
     $("#modalAdd").on("hidden.bs.modal", function(e) {
         $("#modalAddTitle").val("");
@@ -199,6 +387,28 @@ $(document).ready(function() {
         $("#modalAddRepeatFrom").val("completion");
         $("#modalAddTags").importTags("");
         $("#modalAddString").val("");
+    });
+    // handler for logout option in menu
+    $("#modalLogoutConfirm").on("click", function (e) {
+        // disable controls to prevent sending multiple times
+        $("#modalLogoutControls button").prop("disabled", true);
+        $.ajax({
+            url: "/api/auth.php",
+            dataType: "json",
+            method: "GET",
+            data: {
+                submit: "logout"
+            },
+            success: function(resp, status, obj) {
+                // done, return to login page
+                $(location).attr("href", ".");
+            },
+            error: function(obj, status, err) {
+                // error, re-enable controls
+                $("#modalLogoutControls button").prop("disabled", false);
+
+            }
+        });
     });
     // pre-fill task list on load
     listRefresh();
@@ -303,213 +513,4 @@ function listRefresh() {
         row.append($("<td colspan='6'>No tasks to show.  Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?</td>"));
         $("#listTasks").append(row);
     }
-}
-// toggle between all fields and quick add on add task window
-function modalAddToggle() {
-    if ($("#modalAddFields").prop("style").display === "none") {
-        // hide quick add, show fields
-        $("#modalAddQuick").prop("style").display = "none";
-        $("#modalAddFields").prop("style").display = "block";
-        $("#modalAddToggle").html("Quick Add");
-        $("#modalAddString").focus();
-    } else {
-        // hide fields, show quick add
-        $("#modalAddFields").prop("style").display = "none";
-        $("#modalAddQuick").prop("style").display = "block";
-        $("#modalAddToggle").html("Show Fields");
-        $("#modalAddTitle").focus();
-    }
-}
-// handler for confirming add task window
-function modalAdd() {
-    // using quick add
-    if ($("#modalAddFields").prop("style").display === "none") {
-        // shlex parse the string
-        var args = $("#modalAddString").val().shlex();
-        // skeleton task params
-        var params = {
-            title: "",
-            desc: "",
-            pri: 0,
-            due: false,
-            repeat: false,
-            tags: []
-        };
-        // first generic parameter regarded as task title
-        needTitle = true;
-        for (var x in args) {
-            // ignore prototype methods
-            if (args.hasOwnProperty(x)) {
-                var arg = args[x];
-                // $ identifier (hex)
-                if (arg.match(/^\$[0-9a-f]{5}$/)) {
-                    params.id = arg.substr(1);
-                // ~ description
-                } else if (arg[0] === "~" && arg.length > 1) {
-                    params.desc = arg.substr(1).replace("|", "\n");
-                // ! priority (numerical)
-                } else if (arg.match(/^![0-3]$/)) {
-                    params.pri = parseInt(arg[1]);
-                // ! priority (bang)
-                } else if (arg.match(/!{1,3}$/)) {
-                    params.pri = arg.length;
-                // 0 (zero) priority
-                } else if (arg === "0") {
-                    params.pri = 0;
-                // @ due date
-                } else if (arg[0] === "@" && arg.length > 1) {
-                    keywords = arg.substr(1).split("|");
-                    if (keywords.length === 1) {
-                        keywords.push("");
-                    }
-                    // parse date/time keywords
-                // & repeat
-                } else if (arg[0] === "&" && arg.length > 1) {
-                    var days = arg.substr(1);
-                    var fromDue = true;
-                    // repeat from completion instead of due date
-                    if (days[days.length - 1] === "*") {
-                        days = days.substr(0, days.length - 1);
-                        fromDue = false;
-                    }
-                    // aliases
-                    if (["daily", "day", "every day"].has(days)) {
-                        days = 1;
-                    } else if (["weekly", "week"].has(days)) {
-                        days = 7;
-                    } else if (["fortnightly", "fortnight", "2 weeks"].has(days)) {
-                        days = 14;
-                    } else {
-                        // no matches, treat as an integer
-                        days = parseInt(days);
-                        if (isNaN(days) || days <= 0) {
-                            days = false;
-                        }
-                    }
-                    if (days) {
-                        params.repeat = {
-                            days: days,
-                            fromDue: fromDue
-                        };
-                    }
-                // # tags
-                } else if (arg[0] === "#" && arg.length > 1) {
-                    tag = arg.substr(1);
-                    if (!params.tags.has(tag.toLowerCase(), true)) {
-                        params.tags.push(tag);
-                    }
-                // generic
-                } else if (needTitle) {
-                    params.title = arg;
-                    needTitle = false;
-                }
-            }
-        }
-        // can't repeat without due date
-        if (params.repeat && !params.due) {
-            params.due = {
-                date: new Date(),
-                time: false
-            };
-            params.due.date.setHours(0);
-            params.due.date.setMinutes(0);
-            params.due.date.setSeconds(0);
-        }
-        // add new task
-        tasks.push(new Task(params));
-    // using all fields
-    } else {
-        // fill in basic details
-        var params = {
-            title: $("#modalAddTitle").val(),
-            desc: $("#modalAddDesc").val(),
-            pri: parseInt($("#modalAddPri").val()),
-            due: {
-                date: new Date(),
-                time: false
-            },
-            repeat: {
-                days: 1,
-                fromDue: $("#modalAddRepeatFrom").val() === "due"
-            },
-            tags: $("#modalAddTags").val().split(",")
-        };
-        // use preset values for due date
-        switch ($("#modalAddDuePreset").val()) {
-            case "none":
-                params.due = false;
-                break;
-            case "now":
-                params.due.time = true;
-                break;
-            case "yesterday":
-                params.due.date.setDate(params.due.date.getDate() - 1);
-                break;
-            case "tomorrow":
-                params.due.date.setDate(params.due.date.getDate() + 1);
-                break;
-            case "week":
-                params.due.date.setDate(params.due.date.getDate() + 1);
-                break;
-            case "custom":
-                // custom due date, read fields
-                params.due.date = new Date($("#modalAddDueDate").val() + " " + $("#modalAddDueTime").val());
-                // !! converts to boolean (true if value is truthy)
-                params.due.time = !!$("#modalAddDueTime").val();
-                break;
-        }
-        // due date but no time
-        if (params.due && !params.due.time) {
-            // clear time values
-            params.due.date.setHours(0);
-            params.due.date.setMinutes(0);
-            params.due.date.setSeconds(0);
-        }
-        // use preset valus for repeat
-        switch ($("#modalAddRepeatPreset").val()) {
-            case "none":
-                params.repeat = false;
-                break;
-            case "week":
-                params.repeat.days = 7;
-                break;
-            case "fortnight":
-                params.repeat.days = 14;
-                break;
-            case "custom":
-                // custom due date, read field
-                params.repeat.days = parseInt($("#modalAddRepeatDays").val());
-                if (params.repeat.days < 1) {
-                    params.repeat = false;
-                }
-                break;
-        }
-        // add new field
-        tasks.push(new Task(params));
-    }
-    // close add task window
-    $("#modalAdd").modal("hide");
-    // refresh the list
-    listRefresh();
-}
-// handler for logout option in menu
-function modalLogout() {
-    // disable controls to prevent sending multiple times
-    $("#modalLogoutControls button").prop("disabled", true);
-    $.ajax({
-        url: "/api/auth.php",
-        dataType: "json",
-        method: "GET",
-        data: {
-            submit: "logout"
-        },
-        success: function(resp, status, obj) {
-            // done, return to login page
-            $(location).attr("href", ".");
-        },
-        error: function(obj, status, err) {
-            // error, re-enable controls
-            $("#modalLogoutControls button").prop("disabled", false);
-        }
-    });
 }

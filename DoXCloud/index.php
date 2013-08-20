@@ -184,8 +184,8 @@ if (!$_SESSION["auth"]) {
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" onclick="modalAdd();">Add Task</button>
-                        <button id="modalAddToggle" type="button" class="btn btn-info" onclick="modalAddToggle();">Quick Add</button>
+                        <button id="modalAddSave" type="button" class="btn btn-primary">Add</button>
+                        <button id="modalAddToggle" type="button" class="btn btn-info">Quick Add</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                     </div>
                 </div>
@@ -226,7 +226,7 @@ if (!$_SESSION["auth"]) {
                         <p>Some settings go here.</p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" onclick="modalSettings();">Save Changes</button>
+                        <button id="modalSettingsSave" type="button" class="btn btn-primary">Save</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                     </div>
                 </div>
@@ -243,7 +243,7 @@ if (!$_SESSION["auth"]) {
                         <p>Are you sure you want to logout?</p>
                     </div>
                     <div id="modalLogoutControls" class="modal-footer">
-                        <button type="button" class="btn btn-primary" onclick="modalLogout();">Logout</button>
+                        <button id="modalLogoutConfirm" type="button" class="btn btn-primary">Logout</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                     </div>
                 </div>
