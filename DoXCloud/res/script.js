@@ -107,6 +107,30 @@ $(document).ready(function() {
     });
     listRefresh();
 });
+function shlex(str) {
+    var args = str.split(" ");
+    var out = [];
+    var lookForClose = -1;
+    for (var x in args) {
+        if (args.hasOwnProperty(x)) {
+            var arg = args[x];
+            if (lookForClose >= 0) {
+                if (arg.indexOf("\"") >= 0 && arg.charAt(arg.indexOf("\"") - 1) !== "\\") {
+                    var block = args.slice(lookForClose, parseInt(x) + 1).join(" ");
+                    out.push(block.substr(1, block.length - 2).replace(/\\\"/g, "\"").replace(/\\\\/g, "\\"));
+                    lookForClose = -1;
+                }
+            } else {
+                if (arg.indexOf("\"") === 0) {
+                    lookForClose = x;
+                } else {
+                    out.push(arg);
+                }
+            }
+        }
+    }
+    return out;
+}
 function Task(params) {
     if (!params) {
         params = {}
