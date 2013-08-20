@@ -482,6 +482,36 @@ var tasks = [
         tags: ["Test", "Again"]
     })
 ];
+// generate a random ID
+function newID() {
+    var id = Math.floor((Math.random() * 1048576)).toString(16);
+    while (id.length < 5) {
+        id = "0" + id;
+    }
+    return id;
+}
+// generate IDs for all tasks
+function fixIDs() {
+    // list of IDs in use
+    var used = [];
+    // list of task objects to generate IDs for
+    var toGen = [];
+    for (var x in tasks) {
+        if (tasks[x].id && !used.has(tasks[x].id)) {
+            used.push(tasks[x].id);
+        } else {
+            toGen.push(tasks[x]);
+        }
+    }
+    for (var x in toGen) {
+        // generate a new ID
+        toGen[x].id = newID();
+        while (used.has(toGen[x].id)) {
+            toGen[x].id = newID();
+        }
+        used.push(toGen[x].id);
+    }
+}
 // build task list table
 function listRefresh() {
     // clear all table rows, except for headers
