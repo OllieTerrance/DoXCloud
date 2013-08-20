@@ -1,98 +1,192 @@
 $(document).ready(function() {
+    // add helper prototype functions
+    // Array.has: equivalent to Python's "item in array" statement
     Array.prototype.has = function(item) {
         return this.indexOf(item) >= 0;
     };
+    // Date.format: pretty prints a date according to any format
     Date.prototype.format = function(pattern) {
+        // default pattern if none specified
         if (!pattern) pattern = "dd/mm/yyyy HH:MM:SS";
+        // make all numbers 2 digits
         function pad(n) {
             return n < 10 ? "0" + n : n;
         }
-        return pattern.split("yyyy").join(this.getFullYear())
-                      .split("yy").join(this.getFullYear().toString().substring(2))
-                      .split("mm").join(pad(this.getMonth() + 1))
-                      .split("m").join(this.getMonth() + 1)
-                      .split("dd").join(pad(this.getDate()))
-                      .split("d").join(this.getDate())
-                      .split("HH").join(pad(this.getHours()))
-                      .split("H").join(this.getHours())
-                      .split("MM").join(pad(this.getMinutes()))
-                      .split("M").join(this.getMinutes())
-                      .split("SS").join(pad(this.getSeconds()))
-                      .split("S").join(this.getSeconds());
+        return pattern.split("yyyy").join(this.getFullYear())                       // full 4-digit year
+                      .split("yy").join(this.getFullYear().toString().substring(2)) // abreviated 2-digit year
+                      .split("mm").join(pad(this.getMonth() + 1))                   // padded month
+                      .split("m").join(this.getMonth() + 1)                         // plain month
+                      .split("dd").join(pad(this.getDate()))                        // padded date
+                      .split("d").join(this.getDate())                              // plain date
+                      .split("HH").join(pad(this.getHours()))                       // padded hour
+                      .split("H").join(this.getHours())                             // plain hour
+                      .split("MM").join(pad(this.getMinutes()))                     // padded minute
+                      .split("M").join(this.getMinutes())                           // plain minute
+                      .split("SS").join(pad(this.getSeconds()))                     // padded second
+                      .split("S").join(this.getSeconds());                          // plain second
     }
+    // String.shlex: equivalent to Python's "shlex.split" method
+    String.prototype.shlex = function() {
+        // default to splitting by space
+        var args = this.split(" ");
+        // return list of args
+        var out = [];
+        // if unmatched quotes, store the start of the last opened quote
+        var lookForClose = -1;
+        // checking if quotes are open within an arg
+        var quoteOpen = false;
+        for (var x in args) {
+            // ignore prototype methods
+            if (args.hasOwnProperty(x)) {
+                var arg = args[x];
+                // previous character was a backslash, expecting escape sequence
+                var escSeq = false;
+                for (var y in arg) {
+                    // last character was a backslash, treat next character as literal
+                    if (escSeq) {
+                        escSeq = false;
+                    // found a backslash
+                    } else if (arg[y] === "\\") {
+                        escSeq = true;
+                    // found a real quote
+                    } else if (arg[y] === "\"") {
+                        quoteOpen = !quoteOpen;
+                    }
+                }
+                // nothing special here, just return a single argument
+                if (!quoteOpen && lookForClose === -1) {
+                    out.push(arg);
+                // opening quote in this arg, search for a closing quote
+                } else if (quoteOpen && lookForClose === -1) {
+                    lookForClose = x;
+                // still searching for a closing quote, try looking here
+                } else if (!quoteOpen && lookForClose >= 0) {
+                    // take the block of args from the one with opening quote, to current with closing quote
+                    var block = args.slice(lookForClose, parseInt(x) + 1).join(" ");
+                    var escSeq = false;
+                    // list of indexes of quotes to remove
+                    var quotes = [];
+                    for (var y in block) {
+                        // treat next character as literal
+                        if (escSeq) {
+                            escSeq = false;
+                        // start escape sequence
+                        } else if (block[y] === "\\") {
+                            escSeq = true;
+                        // found a quote
+                        } else if (block[y] === "\"") {
+                            quotes.push(y);
+                        }
+                    }
+                    // trim quotes off either end, even if contained within the args
+                    // - assumes two quotes, will ignore any additional inner pairs
+                    var parts = [];
+                    parts.push(block.substr(0, quotes[0]));
+                    parts.push(block.substr(parseInt(quotes[0]) + 1, quotes[quotes.length - 1] - (parseInt(quotes[0]) + 1)));
+                    parts.push(block.substr(parseInt(quotes[quotes.length - 1]) + 1));
+                    block = parts.join("");
+                    out.push(block);
+                    // stop looking for a close quote
+                    lookForClose = -1;
+                }
+                // other case: searching for a quote whilst quote is open
+                // - already known so skip
+            }
+        }
+        // if unbalanced, return false
+        return quoteOpen ? false : out;
+    }
+    // handler for navbar links to select clicked item, deselect others
     $("#tabList li a").on("click", function() {
+        // get hash part from link href
         var id = this.hash.substr(1);
+        // map all links in menu
         $("#tabList li").map(function(index, item) {
+            // add active class if the clicked item
             if (item.id.substr(3).toLowerCase() === id) {
                 $(item).addClass("active");
+            // remove if not
             } else {
                 $(item).removeClass("active");
             }
         });
     });
+    // turn tag field in add task window into a tag editor field
     $("#modalAddTags").tagsInput({
         defaultText: "Add...",
+        // override size to use Bootstrap CSS
         height: "auto",
         width: "auto"
     });
+    // re-apply Bootstrap control theme
     setTimeout(function() {
         $("#modalAddTags_tagsinput").addClass("form-control"); 
     }, 50);
-    $("#modalAdd").on("show.bs.modal", function(e) {
-        
-    });
+    // handler for updating due date/time on preset selection in add task window
     $("#modalAddDuePreset").on("change", function(e) {
         var newDate = new Date();
         var val = this.value;
-        if (["yesterday", "today", "now", "tomorrow", "week"].has(val)) {
-            if (val === "now") {
-                $("#modalAddDueTime").val(newDate.toISOString().substr(11, 8));
-            } else {
-                $("#modalAddDueTime").val("");
-                if (val === "yesterday") {
-                    newDate.setDate(newDate.getDate() - 1);
-                } else if (val === "tomorrow") {
-                    newDate.setDate(newDate.getDate() + 1);
-                } else if (val === "week") {
-                    newDate.setDate(newDate.getDate() + 7);
-                }
-            }
-            $("#modalAddDueDate").val(newDate.toISOString().substr(0, 10));
-        } else if (val === "none") {
-            $("#modalAddDueDate").val("");
-            $("#modalAddDueTime").val("");
-        }
+        // enable fields if custom enabled
         if (val === "custom") {
             $("#modalAddDueDate").removeAttr("disabled");
             $("#modalAddDueTime").removeAttr("disabled");
         } else {
+            // no due date, clear fields
+            if (val === "none") {
+                $("#modalAddDueDate").val("");
+                $("#modalAddDueTime").val("");
+            } else {
+                // include time in field
+                if (val === "now") {
+                    $("#modalAddDueTime").val(newDate.toISOString().substr(11, 8));
+                } else {
+                    // only use a date
+                    $("#modalAddDueTime").val("");
+                    // set offset according to choice
+                    if (val === "yesterday") {
+                        newDate.setDate(newDate.getDate() - 1);
+                    } else if (val === "tomorrow") {
+                        newDate.setDate(newDate.getDate() + 1);
+                    } else if (val === "week") {
+                        newDate.setDate(newDate.getDate() + 7);
+                    }
+                }
+                // update date field
+                $("#modalAddDueDate").val(newDate.toISOString().substr(0, 10));
+            }
+            // disable fields (handled by preset instead)
             $("#modalAddDueDate").attr("disabled", "disabled");
             $("#modalAddDueTime").attr("disabled", "disabled");
         }
     });
+    // handler for updating repeat days on preset selection in add task window
     $("#modalAddRepeatPreset").on("change", function(e) {
         var val = this.value;
+        // no repeat, clear field and disable options
         if (val === "none") {
             $("#modalAddRepeatDays").val("");
-        } else if (val === "day") {
-            $("#modalAddRepeatDays").val("1");
-        } else if (val === "week") {
-            $("#modalAddRepeatDays").val("7");
-        } else if (val === "fortnight") {
-            $("#modalAddRepeatDays").val("14");
-        }
-        if (val === "custom") {
-            $("#modalAddRepeatDays").removeAttr("disabled");
-            $("#modalAddRepeatFrom").removeAttr("disabled");
+            $("#modalAddRepeatFrom").attr("disabled", "disabled");
         } else {
-            $("#modalAddRepeatDays").attr("disabled", "disabled");
-            if (val === "none") {
-                $("#modalAddRepeatFrom").attr("disabled", "disabled");
+            // some repeat option, enable from selector
+            $("#modalAddRepeatFrom").removeAttr("disabled");
+            // custom days, enable days field
+            if (val === "custom") {
+                $("#modalAddRepeatDays").removeAttr("disabled");
             } else {
-                $("#modalAddRepeatFrom").removeAttr("disabled");
+                // disable field (handled by preset instead)
+                $("#modalAddRepeatDays").attr("disabled", "disabled");
+                // set days from preset
+                if (val === "day") {
+                    $("#modalAddRepeatDays").val("1");
+                } else if (val === "week") {
+                    $("#modalAddRepeatDays").val("7");
+                } else if (val === "fortnight") {
+                    $("#modalAddRepeatDays").val("14");
+                }
             }
         }
     });
+    // form reset handler on modal close
     $("#modalAdd").on("hidden.bs.modal", function(e) {
         $("#modalAddTitle").val("");
         $("#modalAddDesc").val("");
@@ -104,56 +198,12 @@ $(document).ready(function() {
         $("#modalAddRepeatDays").val("");
         $("#modalAddRepeatFrom").val("completion");
         $("#modalAddTags").importTags("");
+        $("#modalAddString").val("");
     });
+    // pre-fill task list on load
     listRefresh();
 });
-function shlex(str) {
-    var args = str.split(" ");
-    var out = [];
-    var lookForClose = -1;
-    var quoteOpen = false;
-    for (var x in args) {
-        if (args.hasOwnProperty(x)) {
-            var arg = args[x];
-            var escSeq = false;
-            for (var y in arg) {
-                if (escSeq) {
-                    escSeq = false;
-                } else if (arg[y] === "\\") {
-                    escSeq = true;
-                } else if (arg[y] === "\"") {
-                    quoteOpen = !quoteOpen;
-                }
-            }
-            if (!quoteOpen && lookForClose === -1) {
-                out.push(arg);
-            } else if (quoteOpen && lookForClose === -1) {
-                lookForClose = x;
-            } else if (!quoteOpen && lookForClose >= 0) {
-                var block = args.slice(lookForClose, parseInt(x) + 1).join(" ");
-                var escSeq = false;
-                var quotes = [];
-                for (var y in block) {
-                    if (escSeq) {
-                        escSeq = false;
-                    } else if (block[y] === "\\") {
-                        escSeq = true;
-                    } else if (block[y] === "\"") {
-                        quotes.push(y);
-                    }
-                }
-                var parts = [];
-                parts.push(block.substr(0, quotes[0]));
-                parts.push(block.substr(parseInt(quotes[0]) + 1, quotes[1] - (parseInt(quotes[0]) + 1)));
-                parts.push(block.substr(parseInt(quotes[1]) + 1));
-                block = parts.join("");
-                out.push(block);
-                lookForClose = -1;
-            }
-        }
-    }
-    return quoteOpen ? false : out;
-}
+// Task object constructor
 function Task(params) {
     if (!params) {
         params = {}
@@ -165,13 +215,17 @@ function Task(params) {
     this.repeat = params.repeat;
     this.tags = params.tags;
 }
+// build Task prototype
 Task.prototype = {
+    // assign constructor
     constructor: Task,
+    // return the due date as a string
     formatDue: function() {
         if (this.due) {
             return this.due.date.format(this.due.time ? "dd/mm/yyyy HH:MM:SS" : "dd/mm/yyyy");
         }
     },
+    // return the repeat selection as a string
     formatRepeat: function() {
         if (this.repeat) {
             var out = "";
@@ -187,11 +241,13 @@ Task.prototype = {
                     break;
                 default:
                     out = "Every " + this.repeat.days + " days";
+                    break;
             }
             return out + " from " + (this.repeat.fromDue ? "due date" : "completion");
         }
     }
 }
+// list of user's tasks, as Task objects
 var tasks = [
     new Task({
         title: "Test Task",
@@ -216,14 +272,18 @@ var tasks = [
         tags: ["Test", "Again"]
     })
 ];
+// build task list table
 function listRefresh() {
+    // clear all table rows, except for headers
     $("#listTasks tbody").children().map(function(index, item) {
         if (item.id !== "listTasksHead") {
             item.remove();
         }
     });
+    // user has tasks, display them
     if (tasks.length) {
         for (var i in tasks) {
+            // ignore prototype methods
             if (tasks.hasOwnProperty(i)) {
                 var task = tasks[i];
                 var row = $("<tr/>");
@@ -232,36 +292,41 @@ function listRefresh() {
                 row.append($("<td>" + task.pri + "</td>"));
                 row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
                 row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
-                row.append($("<td>" + (task.tags.length ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
+                // length of tags list offset by 1 due to prototype method
+                row.append($("<td>" + (task.tags.length > 1 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
                 $("#listTasks").append(row);
             }
         }
+    // no user tasks, show column spanning information message
     } else {
         var row = $("<tr/>");
-        row.append($("<td colspan='6'>No tasks to show.</td>"));
+        row.append($("<td colspan='6'>No tasks to show.  Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?</td>"));
         $("#listTasks").append(row);
     }
 }
+// toggle between all fields and quick add on add task window
 function modalAddToggle() {
     if ($("#modalAddFields").prop("style").display === "none") {
+        // hide quick add, show fields
         $("#modalAddQuick").prop("style").display = "none";
         $("#modalAddFields").prop("style").display = "block";
         $("#modalAddToggle").html("Quick Add");
-        setTimeout(function() {
-            $("#modalAddString").focus();
-        }, 50);
+        $("#modalAddString").focus();
     } else {
+        // hide fields, show quick add
         $("#modalAddFields").prop("style").display = "none";
         $("#modalAddQuick").prop("style").display = "block";
         $("#modalAddToggle").html("Show Fields");
-        setTimeout(function() {
-            $("#modalAddTitle").focus();
-        }, 50);
+        $("#modalAddTitle").focus();
     }
 }
+// handler for confirming add task window
 function modalAdd() {
+    // using quick add
     if ($("#modalAddFields").prop("style").display === "none") {
-        var args = shlex($("#modalAddString").val());
+        // shlex parse the string
+        var args = $("#modalAddString").val().shlex();
+        // skeleton task params
         var params = {
             title: "",
             desc: "",
@@ -270,33 +335,44 @@ function modalAdd() {
             repeat: false,
             tags: []
         };
+        // first generic parameter regarded as task title
         needTitle = true;
         for (var x in args) {
+            // ignore prototype methods
             if (args.hasOwnProperty(x)) {
                 var arg = args[x];
+                // $ identifier (hex)
                 if (arg.match(/^\$[0-9a-f]{5}$/)) {
                     params.id = arg.substr(1);
+                // ~ description
                 } else if (arg[0] === "~" && arg.length > 1) {
                     params.desc = arg.substr(1).replace("|", "\n");
+                // ! priority (numerical)
                 } else if (arg.match(/^![0-3]$/)) {
                     params.pri = parseInt(arg[1]);
+                // ! priority (bang)
                 } else if (arg.match(/!{1,3}$/)) {
                     params.pri = arg.length;
+                // 0 (zero) priority
                 } else if (arg === "0") {
                     params.pri = 0;
+                // @ due date
                 } else if (arg[0] === "@" && arg.length > 1) {
                     keywords = arg.substr(1).split("|");
                     if (keywords.length === 1) {
                         keywords.push("");
                     }
                     // parse date/time keywords
+                // & repeat
                 } else if (arg[0] === "&" && arg.length > 1) {
                     var days = arg.substr(1);
                     var fromDue = true;
+                    // repeat from completion instead of due date
                     if (days[days.length - 1] === "*") {
                         days = days.substr(0, days.length - 1);
                         fromDue = false;
                     }
+                    // aliases
                     if (["daily", "day", "every day"].has(days)) {
                         days = 1;
                     } else if (["weekly", "week"].has(days)) {
@@ -304,12 +380,9 @@ function modalAdd() {
                     } else if (["fortnightly", "fortnight", "2 weeks"].has(days)) {
                         days = 14;
                     } else {
-                        try {
-                            days = parseInt(days);
-                            if (days <= 0) {
-                                days = false;
-                            }
-                        } catch (error) {
+                        // no matches, treat as an integer
+                        days = parseInt(days);
+                        if (isNaN(days) || days <= 0) {
                             days = false;
                         }
                     }
@@ -319,17 +392,20 @@ function modalAdd() {
                             fromDue: fromDue
                         };
                     }
+                // # tags
                 } else if (arg[0] === "#" && arg.length > 1) {
                     tag = arg.substr(1);
                     if (!params.tags.has(tag.toLowerCase(), true)) {
                         params.tags.push(tag);
                     }
+                // generic
                 } else if (needTitle) {
                     params.title = arg;
                     needTitle = false;
                 }
             }
         }
+        // can't repeat without due date
         if (params.repeat && !params.due) {
             params.due = {
                 date: new Date(),
@@ -339,8 +415,11 @@ function modalAdd() {
             params.due.date.setMinutes(0);
             params.due.date.setSeconds(0);
         }
+        // add new task
         tasks.push(new Task(params));
+    // using all fields
     } else {
+        // fill in basic details
         var params = {
             title: $("#modalAddTitle").val(),
             desc: $("#modalAddDesc").val(),
@@ -355,6 +434,7 @@ function modalAdd() {
             },
             tags: $("#modalAddTags").val().split(",")
         };
+        // use preset values for due date
         switch ($("#modalAddDuePreset").val()) {
             case "none":
                 params.due = false;
@@ -372,15 +452,20 @@ function modalAdd() {
                 params.due.date.setDate(params.due.date.getDate() + 1);
                 break;
             case "custom":
+                // custom due date, read fields
                 params.due.date = new Date($("#modalAddDueDate").val() + " " + $("#modalAddDueTime").val());
+                // !! converts to boolean (true if value is truthy)
                 params.due.time = !!$("#modalAddDueTime").val();
                 break;
         }
+        // due date but no time
         if (params.due && !params.due.time) {
+            // clear time values
             params.due.date.setHours(0);
             params.due.date.setMinutes(0);
             params.due.date.setSeconds(0);
         }
+        // use preset valus for repeat
         switch ($("#modalAddRepeatPreset").val()) {
             case "none":
                 params.repeat = false;
@@ -392,15 +477,24 @@ function modalAdd() {
                 params.repeat.days = 14;
                 break;
             case "custom":
+                // custom due date, read field
                 params.repeat.days = parseInt($("#modalAddRepeatDays").val());
+                if (params.repeat.days < 1) {
+                    params.repeat = false;
+                }
                 break;
         }
+        // add new field
         tasks.push(new Task(params));
     }
+    // close add task window
     $("#modalAdd").modal("hide");
+    // refresh the list
     listRefresh();
 }
+// handler for logout option in menu
 function modalLogout() {
+    // disable controls to prevent sending multiple times
     $("#modalLogoutControls button").prop("disabled", true);
     $.ajax({
         url: "/api/auth.php",
@@ -410,9 +504,11 @@ function modalLogout() {
             submit: "logout"
         },
         success: function(resp, status, obj) {
+            // done, return to login page
             $(location).attr("href", ".");
         },
         error: function(obj, status, err) {
+            // error, re-enable controls
             $("#modalLogoutControls button").prop("disabled", false);
         }
     });

@@ -90,9 +90,6 @@ if (!$_SESSION["auth"]) {
                     <th>Repeat</th>
                     <th>Tags</th>
                 </tr>
-                <tr id="listTasksEmpty">
-                    <td colspan="6">No tasks to show.</td>
-                </tr>
             </table>
         </div>
         <div id="modalAdd" class="modal fade">
