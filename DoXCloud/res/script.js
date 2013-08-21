@@ -1,11 +1,11 @@
 $(document).ready(function() {
     // add helper prototype functions
     // Array.has: equivalent to Python's "item in array" statement
-    Array.prototype.has = function(item) {
+    Array.prototype.has = function has(item) {
         return this.indexOf(item) >= 0;
     };
     // Date.format: pretty prints a date according to any format
-    Date.prototype.format = function(pattern) {
+    Date.prototype.format = function format(pattern) {
         // default pattern if none specified
         if (!pattern) pattern = "dd/mm/yyyy HH:MM:SS";
         // make all numbers 2 digits
@@ -26,7 +26,7 @@ $(document).ready(function() {
                       .split("S").join(this.getSeconds());                          // plain second
     }
     // String.shlex: equivalent to Python's "shlex.split" method
-    String.prototype.shlex = function() {
+    String.prototype.shlex = function shlex() {
         // default to splitting by space
         var args = this.split(" ");
         // return list of args
@@ -430,13 +430,13 @@ Task.prototype = {
     // assign constructor
     constructor: Task,
     // return the due date as a string
-    formatDue: function() {
+    formatDue: function formatDue() {
         if (this.due) {
             return this.due.date.format(this.due.time ? "dd/mm/yyyy HH:MM:SS" : "dd/mm/yyyy");
         }
     },
     // return the repeat selection as a string
-    formatRepeat: function() {
+    formatRepeat: function formatRepeat() {
         if (this.repeat) {
             var out = "";
             switch (this.repeat.days) {
@@ -457,61 +457,69 @@ Task.prototype = {
         }
     }
 }
-// list of user's tasks, as Task objects
-var tasks = [
-    new Task({
-        title: "Test Task",
-        desc: "This is an example task.",
-        pri: 2,
-        due: {
-            date: new Date(1376953200000),
-            time: false
-        },
-        repeat: {
-            days: 7,
-            fromDue: true
-        },
-        tags: ["Test"]
-    }),
-    new Task({
-        title: "Another Test Task",
-        desc: "This is an additional example task.",
-        pri: 1,
-        due: false,
-        repeat: false,
-        tags: ["Test", "Again"]
-    })
-];
-// generate a random ID
-function newID() {
-    var id = Math.floor((Math.random() * 1048576)).toString(16);
-    while (id.length < 5) {
-        id = "0" + id;
-    }
-    return id;
-}
-// generate IDs for all tasks
-function fixIDs() {
-    // list of IDs in use
-    var used = [];
-    // list of task objects to generate IDs for
-    var toGen = [];
-    for (var x in tasks) {
-        if (tasks[x].id && !used.has(tasks[x].id)) {
-            used.push(tasks[x].id);
-        } else {
-            toGen.push(tasks[x]);
+// main DoX API: access to tasks and helper methods
+// - self-calling function returns an object instance
+var DoX = new (function DoX() {
+    // list of user's tasks, as Task objects
+    this.tasks = [
+        new Task({
+            id: "a7c32",
+            title: "Test Task",
+            desc: "This is an example task.",
+            pri: 2,
+            due: {
+                date: new Date(1376953200000),
+                time: false
+            },
+            repeat: {
+                days: 7,
+                fromDue: true
+            },
+            tags: ["Test"]
+        }),
+        new Task({
+            id: "9f091",
+            title: "Another Test Task",
+            desc: "This is an additional example task.",
+            pri: 1,
+            due: false,
+            repeat: false,
+            tags: ["Test", "Again"]
+        })
+    ];
+    // list of completed tasks
+    this.done = [];
+    // generate a random ID
+    this.newID = function newID() {
+        var id = Math.floor((Math.random() * 1048576)).toString(16);
+        while (id.length < 5) {
+            id = "0" + id;
         }
+        return id;
     }
-    for (var x in toGen) {
-        // generate a new ID
-        toGen[x].id = newID();
-        while (used.has(toGen[x].id)) {
+    // generate IDs for all tasks
+    this.fixIDs = function fixIDs() {
+        // list of IDs in use
+        var used = [];
+        // list of task objects to generate IDs for
+        var toGen = [];
+        for (var x in tasks) {
+            if (tasks[x].id && !used.has(tasks[x].id)) {
+                used.push(tasks[x].id);
+            } else {
+                toGen.push(tasks[x]);
+            }
+        }
+        for (var x in toGen) {
+            // generate a new ID
             toGen[x].id = newID();
+            while (used.has(toGen[x].id)) {
+                toGen[x].id = newID();
+            }
+            used.push(toGen[x].id);
         }
-        used.push(toGen[x].id);
     }
-}
+})();
 // build task list table
 function listRefresh() {
     // clear all table rows, except for headers
@@ -521,22 +529,17 @@ function listRefresh() {
         }
     });
     // user has tasks, display them
-    if (tasks.length) {
-        for (var i in tasks) {
-            // ignore prototype methods
-            if (tasks.hasOwnProperty(i)) {
-                var task = tasks[i];
-                var row = $("<tr/>");
-                row.append($("<td>" + (parseInt(i) + 1) + "</td>"));
-                row.append($("<td>" + task.title + "</td>"));
-                row.append($("<td>" + task.pri + "</td>"));
-                row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
-                row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
-                // length of tags list offset by 1 due to prototype method
-                row.append($("<td>" + (task.tags.length > 1 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
-                $("#listTasks").append(row);
-            }
-        }
+    if (DoX.tasks.length) {
+        $(DoX.tasks).each(function(index, task) {
+            var row = $("<tr/>");
+            row.append($("<td>" + (index + 1) + "</td>"));
+            row.append($("<td>" + task.title + "</td>"));
+            row.append($("<td>" + task.pri + "</td>"));
+            row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
+            row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
+            row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
+            $("#listTasks").append(row);
+        });
     // no user tasks, show column spanning information message
     } else {
         var row = $("<tr/>");
