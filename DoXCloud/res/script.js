@@ -206,10 +206,139 @@ $(document).ready(function() {
     $("#modalAddSave").on("click", function(e) {
         // using quick add
         if ($("#modalAddFields").prop("style").display === "none") {
-            // shlex parse the string
-            var args = $("#modalAddString").val().shlex();
-            // skeleton task params
+            // use the Task constructor to parse
+            var task = new Task($("#modalAddString").val());
+            // if valid, add new task
+            if (task) {
+                DoX.tasks.push(task);
+            }
+        // using all fields
+        } else {
+            // fill in basic details
             var params = {
+                title: $("#modalAddTitle").val(),
+                desc: $("#modalAddDesc").val(),
+                pri: parseInt($("#modalAddPri").val()),
+                due: {
+                    date: new Date(),
+                    time: false
+                },
+                repeat: {
+                    days: 1,
+                    fromDue: $("#modalAddRepeatFrom").val() === "due"
+                },
+                tags: $("#modalAddTags").val().split(",")
+            };
+            // use preset values for due date
+            switch ($("#modalAddDuePreset").val()) {
+                case "none":
+                    params.due = false;
+                    break;
+                case "now":
+                    params.due.time = true;
+                    break;
+                case "yesterday":
+                    params.due.date.setDate(params.due.date.getDate() - 1);
+                    break;
+                case "tomorrow":
+                    params.due.date.setDate(params.due.date.getDate() + 1);
+                    break;
+                case "week":
+                    params.due.date.setDate(params.due.date.getDate() + 1);
+                    break;
+                case "custom":
+                    // custom due date, read fields
+                    params.due.date = new Date($("#modalAddDueDate").val() + " " + $("#modalAddDueTime").val());
+                    // !! converts to boolean (true if value is truthy)
+                    params.due.time = !!$("#modalAddDueTime").val();
+                    break;
+            }
+            // due date but no time
+            if (params.due && !params.due.time) {
+                // clear time values
+                params.due.date.setHours(0);
+                params.due.date.setMinutes(0);
+                params.due.date.setSeconds(0);
+            }
+            // use preset valus for repeat
+            switch ($("#modalAddRepeatPreset").val()) {
+                case "none":
+                    params.repeat = false;
+                    break;
+                case "week":
+                    params.repeat.days = 7;
+                    break;
+                case "fortnight":
+                    params.repeat.days = 14;
+                    break;
+                case "custom":
+                    // custom due date, read field
+                    params.repeat.days = parseInt($("#modalAddRepeatDays").val());
+                    if (params.repeat.days < 1) {
+                        params.repeat = false;
+                    }
+                    break;
+            }
+            // add new field
+            DoX.tasks.push(new Task(params));
+        }
+        // close add task window
+        $("#modalAdd").modal("hide");
+        // refresh the list
+        listRefresh();
+    });
+    // form reset handler on modal close
+    $("#modalAdd").on("hidden.bs.modal", function(e) {
+        $("#modalAddTitle").val("");
+        $("#modalAddDesc").val("");
+        $("#modalAddPri").val("0");
+        $("#modalAddDuePreset").val("none");
+        $("#modalAddDueDate").val("");
+        $("#modalAddDueTime").val("");
+        $("#modalAddRepeatPreset").val("none");
+        $("#modalAddRepeatDays").val("");
+        $("#modalAddRepeatFrom").val("completion");
+        $("#modalAddTags").importTags("");
+        $("#modalAddString").val("");
+    });
+    // handler for logout option in menu
+    $("#modalLogoutConfirm").on("click", function (e) {
+        // disable controls to prevent sending multiple times
+        $("#modalLogoutControls button").prop("disabled", true);
+        $.ajax({
+            url: "/api/auth.php",
+            dataType: "json",
+            method: "GET",
+            data: {
+                submit: "logout"
+            },
+            success: function(resp, status, obj) {
+                // done, return to login page
+                $(location).attr("href", ".");
+            },
+            error: function(obj, status, err) {
+                // error, re-enable controls
+                $("#modalLogoutControls button").prop("disabled", false);
+
+            }
+        });
+    });
+    // pre-fill task list on load
+    listRefresh();
+});
+// Task object constructor
+function Task(params) {
+    switch (typeof params) {
+        // passed a DoX string, need to parse
+        case "string":
+            // shlex parse the string
+            var args = params.shlex();
+            // if invalid, end here
+            if (!args) {
+                return false;
+            }
+            // skeleton task params
+            params = {
                 title: "",
                 desc: "",
                 pri: 0,
@@ -297,127 +426,20 @@ $(document).ready(function() {
                 params.due.date.setMinutes(0);
                 params.due.date.setSeconds(0);
             }
-            // add new task
-            tasks.push(new Task(params));
-        // using all fields
-        } else {
-            // fill in basic details
-            var params = {
-                title: $("#modalAddTitle").val(),
-                desc: $("#modalAddDesc").val(),
-                pri: parseInt($("#modalAddPri").val()),
-                due: {
-                    date: new Date(),
-                    time: false
-                },
-                repeat: {
-                    days: 1,
-                    fromDue: $("#modalAddRepeatFrom").val() === "due"
-                },
-                tags: $("#modalAddTags").val().split(",")
+            break;
+        // no parameters, create a blank task
+        case "undefined":
+            params = {
+                title: "",
+                desc: "",
+                pri: 0,
+                due: false,
+                repeat: false,
+                tags: []
             };
-            // use preset values for due date
-            switch ($("#modalAddDuePreset").val()) {
-                case "none":
-                    params.due = false;
-                    break;
-                case "now":
-                    params.due.time = true;
-                    break;
-                case "yesterday":
-                    params.due.date.setDate(params.due.date.getDate() - 1);
-                    break;
-                case "tomorrow":
-                    params.due.date.setDate(params.due.date.getDate() + 1);
-                    break;
-                case "week":
-                    params.due.date.setDate(params.due.date.getDate() + 1);
-                    break;
-                case "custom":
-                    // custom due date, read fields
-                    params.due.date = new Date($("#modalAddDueDate").val() + " " + $("#modalAddDueTime").val());
-                    // !! converts to boolean (true if value is truthy)
-                    params.due.time = !!$("#modalAddDueTime").val();
-                    break;
-            }
-            // due date but no time
-            if (params.due && !params.due.time) {
-                // clear time values
-                params.due.date.setHours(0);
-                params.due.date.setMinutes(0);
-                params.due.date.setSeconds(0);
-            }
-            // use preset valus for repeat
-            switch ($("#modalAddRepeatPreset").val()) {
-                case "none":
-                    params.repeat = false;
-                    break;
-                case "week":
-                    params.repeat.days = 7;
-                    break;
-                case "fortnight":
-                    params.repeat.days = 14;
-                    break;
-                case "custom":
-                    // custom due date, read field
-                    params.repeat.days = parseInt($("#modalAddRepeatDays").val());
-                    if (params.repeat.days < 1) {
-                        params.repeat = false;
-                    }
-                    break;
-            }
-            // add new field
-            tasks.push(new Task(params));
-        }
-        // close add task window
-        $("#modalAdd").modal("hide");
-        // refresh the list
-        listRefresh();
-    });
-    // form reset handler on modal close
-    $("#modalAdd").on("hidden.bs.modal", function(e) {
-        $("#modalAddTitle").val("");
-        $("#modalAddDesc").val("");
-        $("#modalAddPri").val("0");
-        $("#modalAddDuePreset").val("none");
-        $("#modalAddDueDate").val("");
-        $("#modalAddDueTime").val("");
-        $("#modalAddRepeatPreset").val("none");
-        $("#modalAddRepeatDays").val("");
-        $("#modalAddRepeatFrom").val("completion");
-        $("#modalAddTags").importTags("");
-        $("#modalAddString").val("");
-    });
-    // handler for logout option in menu
-    $("#modalLogoutConfirm").on("click", function (e) {
-        // disable controls to prevent sending multiple times
-        $("#modalLogoutControls button").prop("disabled", true);
-        $.ajax({
-            url: "/api/auth.php",
-            dataType: "json",
-            method: "GET",
-            data: {
-                submit: "logout"
-            },
-            success: function(resp, status, obj) {
-                // done, return to login page
-                $(location).attr("href", ".");
-            },
-            error: function(obj, status, err) {
-                // error, re-enable controls
-                $("#modalLogoutControls button").prop("disabled", false);
-
-            }
-        });
-    });
-    // pre-fill task list on load
-    listRefresh();
-});
-// Task object constructor
-function Task(params) {
-    if (!params) {
-        params = {}
+            break;
     }
+    // set new fields
     this.title = params.title;
     this.desc = params.desc;
     this.pri = params.pri;
@@ -455,38 +477,58 @@ Task.prototype = {
             }
             return out + " from " + (this.repeat.fromDue ? "due date" : "completion");
         }
+    },
+    // override toString() method to return DoX string format instead
+    toString: function toString() {
+        var args = [];
+        // wrap multi-word strings with quotes
+        function quote(str) {
+            if (str.indexOf(" ") >= 0) {
+                str = "\"" + str.replace(/\"/g, "\\\"") + "\"";
+            }
+            return str;
+        }
+        if (this.title) {
+            // just print title
+            args.push(quote(this.title));
+        }
+        if (this.desc) {
+            // description with line breaks converted
+            args.push("~" + quote(this.desc.replace(/\n/g, "|")));
+        }
+        if (this.pri) {
+            // basic priority if not 0
+            args.push("!" + this.pri);
+        }
+        if (this.due) {
+            // due date in standard format
+            args.push(this.due.date.format(this.due.time ? "@dd/mm/yyyy|HH:MM:SS" : "@dd/mm/yyyy"));
+        }
+        if (this.repeat) {
+            // repeat as a number
+            args.push("&" + this.repeat.days + (this.repeat.fromDue ? "" : "*"));
+        }
+        if (this.tags.length > 0) {
+            // individual tags
+            for (var x in this.tags) {
+                // ignore prototype methods
+                if (this.tags.hasOwnProperty(x)) {
+                    args.push("#" + quote(this.tags[x]));
+                }
+            }
+        }
+        if (this.id) {
+            args.push("$" + this.id);
+        }
+        // return formatted string
+        return args.join(" ");
     }
 }
 // main DoX API: access to tasks and helper methods
 // - self-calling function returns an object instance
 var DoX = new (function DoX() {
     // list of user's tasks, as Task objects
-    this.tasks = [
-        new Task({
-            id: "a7c32",
-            title: "Test Task",
-            desc: "This is an example task.",
-            pri: 2,
-            due: {
-                date: new Date(1376953200000),
-                time: false
-            },
-            repeat: {
-                days: 7,
-                fromDue: true
-            },
-            tags: ["Test"]
-        }),
-        new Task({
-            id: "9f091",
-            title: "Another Test Task",
-            desc: "This is an additional example task.",
-            pri: 1,
-            due: false,
-            repeat: false,
-            tags: ["Test", "Again"]
-        })
-    ];
+    this.tasks = [];
     // list of completed tasks
     this.done = [];
     // generate a random ID
