@@ -211,6 +211,7 @@ $(document).ready(function() {
             // if valid, add new task
             if (task) {
                 DoX.tasks.push(task);
+                DoX.saveTasks();
             }
         // using all fields
         } else {
@@ -279,8 +280,9 @@ $(document).ready(function() {
                     }
                     break;
             }
-            // add new field
+            // add new task
             DoX.tasks.push(new Task(params));
+            DoX.saveTasks();
         }
         // close add task window
         $("#modalAdd").modal("hide");
@@ -323,8 +325,14 @@ $(document).ready(function() {
             }
         });
     });
-    // pre-fill task list on load
-    listRefresh();
+    // if local storage available, load from storage and pre-fill task list
+    if (hasStorage()) {
+        DoX.loadTasks();
+        listRefresh();
+    // if not, warn about no saving
+    } else {
+        addAlert("<strong>Warning:</strong> local storage is not available in your browser.  You will not be able to save any tasks locally.", "danger");
+    }
 });
 // Task object constructor
 function Task(params) {
@@ -531,6 +539,35 @@ var DoX = new (function DoX() {
     this.tasks = [];
     // list of completed tasks
     this.done = [];
+    // save tasks to local storage
+    this.saveTasks = function saveTasks() {
+        if (hasStorage()) {
+            window.localStorage.clear();
+            window.localStorage.taskCount = this.tasks.length;
+            window.localStorage.doneCount = this.done.length;
+            $(this.tasks).each(function(index, item) {
+                window.localStorage["task" + index] = item;
+            });
+            $(this.done).each(function(index, item) {
+                window.localStorage["done" + index] = item;
+            });
+        }
+    };
+    // load tasks from local storage
+    this.loadTasks = function loadTasks() {
+        if (hasStorage()) {
+            var taskCount = parseInt(window.localStorage.taskCount);
+            this.tasks = [];
+            for (var x = 0; x < taskCount; x++) {
+                this.tasks.push(new Task(window.localStorage["task" + x]));
+            }
+            var doneCount = parseInt(window.localStorage.doneCount);
+            this.done = [];
+            for (var x = 0; x < doneCount; x++) {
+                this.done.push(new Task(window.localStorage["done" + x]));
+            }
+        }
+    };
     // generate a random ID
     this.newID = function newID() {
         var id = Math.floor((Math.random() * 1048576)).toString(16);
@@ -562,6 +599,10 @@ var DoX = new (function DoX() {
         }
     }
 })();
+// check if local storage is available in browser
+function hasStorage() {
+    return "localStorage" in window && window.localStorage !== null;
+}
 // build task list table
 function listRefresh() {
     // clear all table rows, except for headers
@@ -588,4 +629,18 @@ function listRefresh() {
         row.append($("<td colspan='6'>No tasks to show.  Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?</td>"));
         $("#listTasks").append(row);
     }
+}
+// add an alert to the notification box
+function addAlert(message, type, dismissable) {
+    var alert = $("<div class='alert alert-dismissable'>");
+    // add class if defined
+    if (type) {
+        alert.addClass("alert-" + type);
+    }
+    // default to true if undefined
+    if (dismissable !== false) {
+        alert.append($("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>"));
+    }
+    alert.append($("<span>" + message + "</span>"));
+    $("#notifBox").append(alert);
 }
