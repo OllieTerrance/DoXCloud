@@ -1,109 +1,30 @@
-/* body {
-    width: 810px;
-    margin: 0 auto;
-    padding-bottom: 100px;
-    font-family: "Noto Serif", Cambria, serif;
-    font-size: 1.2em;
-    color: #444;
+body {
+    padding-top: 78px;
 }
-h1, h2, h3 {
-    margin: 60px 0 0;
-    text-align: center;
-    font-family: "Open Sans", "Segoe UI", sans-serif;
-    color: #333;
+.table-stack {
+    width: 100%;
 }
-h1 {
-    font-size: 4.5em;
+.table-stack-large {
+    display: table;
 }
-h2 {
-    font-size: 3em;
+.table-stack-small {
+    display: none;
 }
-h3 {
-    margin: 15px 0 50px;
-    font-size: 1.5em;
-    font-style: italic;
+@media (max-width: 767px) {
+    .table-stack-large { 
+      display: none;
+    }
+    .table-stack-small {
+        display: table;
+    }
 }
-p {
-    margin: 20px 0 0;
+.st-head-row-main {
+    display: none;
 }
-a {
-    color: #2A65A0;
-    text-decoration: none;
+.st-key {
+    width: 20%;
+    text-align: right;
 }
-a:hover {
-    color: #4486C7;
+.table-stack-small:not([class]) {
+    height: 7.5px;
 }
-ul {
-    margin: 25px 0 0;
-}
-li {
-    margin-top: 5px;
-}
-pre, code {
-    font-family: "Oxygen Mono", Consolas, monospace;
-    font-size: 1em;
-}
-pre {
-    margin: 20px 0 0;
-}
-img {
-    display: block;
-    margin: 20px auto 0;
-}
-form {
-    margin-top: 20px;
-    text-align: center;
-}
-input {
-    display: block;
-    width: 380px;
-    margin: 10px auto 0;
-    padding: 5px;
-    font-family: "Noto Serif", Cambria, serif;
-    font-size: 1.2em;
-}
-input:not([type="submit"]) {
-    border: 1px solid #444;
-}
-input:not([type="submit"]):focus {
-    width: 371px;
-    border-right-width: 10px;
-    outline: none;
-}
-input:not([type="submit"]):focus:valid {
-    border-color: #1D6C16;
-    color: #1D6C16;
-}
-input:not([type="submit"]):focus:invalid {
-    border-color: #932013;
-    color: #932013;
-}
-input[type="submit"] {
-    display: inline;
-    width: 180px;
-    padding: 5px;
-    font-family: "Open Sans", "Segoe UI", sans-serif;
-}
-.infobar {
-    width: 361px;
-    margin: 20px auto 0;
-    padding: 10px;
-    background-color: #AAA;
-    border: 1px solid #444;
-    border-left-width: 10px;
-    color: #444;
-}
-.infobar.error {
-    background-color: #DC8076;
-    border-color: #932013;
-    color: #932013;
-}
-.infobar.success {
-    background-color: #66C75D;
-    border-color: #1D6C16;
-    color: #1D6C16;
-}
-#footer {
-    margin: 80px auto 0;
-    text-align: center;
-} */

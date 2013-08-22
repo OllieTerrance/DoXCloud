@@ -637,6 +637,11 @@ var UI = new (function UI() {
             row.append($("<td colspan='6'>No tasks to show.  Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?</td>"));
             $("#listTasks").append(row);
         }
+        // reset table stacking for mobile devices
+        $(".table-stack.table-stack-small").remove();
+        $("#listTasks").stacktable({myClass: "table table-bordered table-striped table-stack table-stack-small"});
+        // remove top row, add spacing between task blocks
+        $('.table-stack-small tr:empty:nth-child(1)').remove();
     };
     // subclass for managing Bootstrap alerts
     this.alerts = {
