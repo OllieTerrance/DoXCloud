@@ -287,7 +287,7 @@ $(document).ready(function() {
         // close add task window
         $("#modalAdd").modal("hide");
         // refresh the list
-        listRefresh();
+        UI.listRefresh();
     });
     // form reset handler on modal close
     $("#modalAdd").on("hidden.bs.modal", function(e) {
@@ -326,20 +326,20 @@ $(document).ready(function() {
         });
     });
     // if local storage available, load from storage and pre-fill task list
-    if (hasStorage()) {
+    if (Store.has()) {
         DoX.loadTasks();
-        listRefresh();
+        UI.listRefresh();
     // if not, warn about no saving
     } else {
-        addAlert("<strong>Warning:</strong> local storage is not available in your browser.  You will not be able to save any tasks locally.", "danger", "localStorage");
+        UI.alerts.add("<strong>Warning:</strong> local storage is not available in your browser.  You will not be able to save any tasks locally.", "danger", "store");
     }
     // register network status change events
     $(window).on("online offline", function(e) {
-        clearAlerts("network");
+        UI.alerts.clear("network");
         if (e.type === "online") {
-            addAlert("<strong>Just a heads up:</strong> your internet connection has been restored, and you can continue to work on your tasks as normal.", "success", "network");
+            UI.alerts.add("<strong>Just a heads up:</strong> your internet connection has been restored, and you can continue to work on your tasks as normal.", "success", "network");
         } else {
-            addAlert("<strong>Just a heads up:</strong> you don't seem to be connected to the internet any more.  No worries, you can just continue to work on your tasks right here.", "info", "network");
+            UI.alerts.add("<strong>Just a heads up:</strong> you don't seem to be connected to the internet any more.  No worries, you can just continue to work on your tasks right here.", "info", "network");
         }
     });
 });
@@ -550,30 +550,30 @@ var DoX = new (function DoX() {
     this.done = [];
     // save tasks to local storage
     this.saveTasks = function saveTasks() {
-        if (hasStorage()) {
-            localStorage.clear();
-            localStorage.taskCount = this.tasks.length;
-            localStorage.doneCount = this.done.length;
+        if (Store.has()) {
+            Store.clear();
+            Store.set("taskCount", this.tasks.length);
+            Store.set("doneCount", this.done.length);
             $(this.tasks).each(function(index, item) {
-                localStorage["task" + index] = item;
+                Store.set("task" + index, item);
             });
             $(this.done).each(function(index, item) {
-                localStorage["done" + index] = item;
+                Store.set("done" + index, item);
             });
         }
     };
     // load tasks from local storage
     this.loadTasks = function loadTasks() {
-        if (hasStorage()) {
-            var taskCount = parseInt(localStorage.taskCount);
+        if (Store.has()) {
+            var taskCount = parseInt(Store.get("taskCount"));
             this.tasks = [];
             for (var x = 0; x < taskCount; x++) {
-                this.tasks.push(new Task(localStorage["task" + x]));
+                this.tasks.push(new Task(Store.get("task" + x)));
             }
-            var doneCount = parseInt(localStorage.doneCount);
+            var doneCount = parseInt(Store.get("doneCount"));
             this.done = [];
             for (var x = 0; x < doneCount; x++) {
-                this.done.push(new Task(localStorage["done" + x]));
+                this.done.push(new Task(Store.get("done" + x)));
             }
         }
     };
@@ -608,56 +608,86 @@ var DoX = new (function DoX() {
         }
     }
 })();
-// check if local storage is available in browser
-function hasStorage() {
-    return "localStorage" in window && localStorage !== null;
-}
-// build task list table
-function listRefresh() {
-    // clear all table rows, except for headers
-    $("#listTasks tbody").children().map(function(index, item) {
-        if (item.id !== "listTasksHead") {
-            item.remove();
-        }
-    });
-    // user has tasks, display them
-    if (DoX.tasks.length) {
-        $(DoX.tasks).each(function(index, task) {
-            var row = $("<tr/>");
-            row.append($("<td>" + (index + 1) + "</td>"));
-            row.append($("<td>" + task.title + "</td>"));
-            row.append($("<td>" + task.pri + "</td>"));
-            row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
-            row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
-            row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
-            $("#listTasks").append(row);
+// UI API: helper methods for controlling the frontend
+// - self-calling function returns an object instance
+var UI = new (function UI() {
+    // build task list table
+    this.listRefresh = function listRefresh() {
+        // clear all table rows, except for headers
+        $("#listTasks tbody").children().map(function(index, item) {
+            if (item.id !== "listTasksHead") {
+                item.remove();
+            }
         });
-    // no user tasks, show column spanning information message
-    } else {
-        var row = $("<tr/>");
-        row.append($("<td colspan='6'>No tasks to show.  Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?</td>"));
-        $("#listTasks").append(row);
+        // user has tasks, display them
+        if (DoX.tasks.length) {
+            $(DoX.tasks).each(function(index, task) {
+                var row = $("<tr/>");
+                row.append($("<td>" + (index + 1) + "</td>"));
+                row.append($("<td>" + task.title + "</td>"));
+                row.append($("<td>" + task.pri + "</td>"));
+                row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
+                row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
+                row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
+                $("#listTasks").append(row);
+            });
+        // no user tasks, show column spanning information message
+        } else {
+            var row = $("<tr/>");
+            row.append($("<td colspan='6'>No tasks to show.  Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?</td>"));
+            $("#listTasks").append(row);
+        }
+    };
+    // subclass for managing Bootstrap alerts
+    this.alerts = {
+        // add an alert to the notification box
+        add: function add(message, type, tag, dismissable) {
+            var alert = $("<div class='alert alert-dismissable'>");
+            // add class if defined
+            if (type) {
+                alert.addClass("alert-" + type);
+            }
+            // add tag if defined
+            if (tag) {
+                alert.addClass("notif-" + tag);
+            }
+            // default to true if undefined
+            if (dismissable !== false) {
+                alert.append($("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>"));
+            }
+            alert.append($("<span>" + message + "</span>"));
+            $("#notifBox").append(alert);
+        },
+        // clear all alerts, or ones with a specific type (class)
+        clear: function clear(tag) {
+            $(".alert" + (tag ? ".notif-" + tag : "")).remove();
+        }
+    };
+})();
+// Store API: light shorthand wrapper for local storage
+var Store = new (function Store() {
+    // check if local storage is available in browser
+    this.has = function has() {
+        return "localStorage" in window && localStorage !== null;
+    };
+    // store something in local storage
+    this.set = function set(key, value) {
+        return localStorage[key] = value;
     }
-}
-// add an alert to the notification box
-function addAlert(message, type, tag, dismissable) {
-    var alert = $("<div class='alert alert-dismissable'>");
-    // add class if defined
-    if (type) {
-        alert.addClass("alert-" + type);
+    // retrieve something from local storage
+    this.get = function get(key) {
+        return localStorage[key];
     }
-    // add tag if defined
-    if (tag) {
-        alert.addClass("notif-" + tag);
+    // retrieve all items
+    this.all = function all() {
+        return localStorage;
     }
-    // default to true if undefined
-    if (dismissable !== false) {
-        alert.append($("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>"));
+    // delete something in local storage
+    this.del = function del(key) {
+        return delete localStorage[key];
     }
-    alert.append($("<span>" + message + "</span>"));
-    $("#notifBox").append(alert);
-}
-// clear all alerts, or ones with a specific type (class)
-function clearAlerts(tag) {
-    $(".alert" + (tag ? ".notif-" + tag : "")).remove();
-}
+    // delete all items
+    this.clear = function clear() {
+        return localStorage.clear();
+    }
+})();
