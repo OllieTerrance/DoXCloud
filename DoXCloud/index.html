@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html manifest="cache.manifest">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
         <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
@@ -50,17 +50,20 @@
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Account <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                <li class="dropdown-header">Logged in as:<br/><? print($_SESSION["auth"]["email"]); ?></li>
+                                <!--<li class="dropdown-header">Logged in as:<br/><? print($_SESSION["auth"]["email"]); ?></li>-->
                                 <li>
                                     <a data-toggle="modal" data-target="#modalSettings" href="#settings">Settings</a>
                                 </li>
-                                <li>
+                                <!--<li>
                                     <a data-toggle="modal" data-target="#modalLogout" href="#logout">Logout</a>
-                                </li>
+                                </li>-->
                                 <li class="divider"></li>
                                 <li class="dropdown-header">About DoX and DoXCloud</li>
                                 <li>
-                                    <a href="https://github.com/OllieTerrance/DoX">Watch DoX on GitHub</a>
+                                    <a href="https://github.com/OllieTerrance/DoXCloud">DoXCloud on GitHub</a>
+                                </li>
+                                <li>
+                                    <a href="https://github.com/OllieTerrance/DoX">DoX on GitHub</a>
                                 </li>
                                 <li>
                                     <a href="https://github.com/OllieTerrance">@OllieTerrance on GitHub</a>
