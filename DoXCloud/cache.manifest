@@ -2,6 +2,7 @@ CACHE MANIFEST
 index.html
 res/bootstrap.min.css
 res/bootstrap.min.js
+res/jquery.stacktable.js
 res/jquery.tagsinput.css
 res/jquery.tagsinput.min.js
 res/jquery-1.10.2.min.js
