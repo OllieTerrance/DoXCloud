@@ -13,7 +13,7 @@ $(document).ready(function() {
             return n < 10 ? "0" + n : n;
         }
         return pattern.split("yyyy").join(this.getFullYear())                       // full 4-digit year
-                      .split("yy").join(this.getFullYear().toString().substring(2)) // abreviated 2-digit year
+                      .split("yy").join(this.getFullYear().toString().substring(2)) // abbreviated 2-digit year
                       .split("mm").join(pad(this.getMonth() + 1))                   // padded month
                       .split("m").join(this.getMonth() + 1)                         // plain month
                       .split("dd").join(pad(this.getDate()))                        // padded date
@@ -261,7 +261,7 @@ $(document).ready(function() {
                 params.due.date.setMinutes(0);
                 params.due.date.setSeconds(0);
             }
-            // use preset valus for repeat
+            // use preset values for repeat
             switch ($("#modalAddRepeatPreset").val()) {
                 case "none":
                     params.repeat = false;
