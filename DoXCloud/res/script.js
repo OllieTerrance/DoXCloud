@@ -392,11 +392,12 @@ function Task(params) {
                         params.pri = 0;
                     // @ due date
                     } else if (arg[0] === "@" && arg.length > 1) {
-                        keywords = arg.substr(1).split("|");
+                        var keywords = arg.substr(1).toLowerCase().split("|");
                         if (keywords.length === 1) {
                             keywords.push("");
                         }
                         // parse date/time keywords
+                        params.due = Task.parseDue(keywords);
                     // & repeat
                     } else if (arg[0] === "&" && arg.length > 1) {
                         var days = arg.substr(1);
@@ -546,6 +547,127 @@ Task.prototype = {
         // return formatted string
         return args.join(" ");
     }
+}
+// function to parse a date string into a due param
+// - outside of prototype to apply it to constructor rather than instance
+Task.parseDue = function parseDue(keywords) {
+    var date = keywords[0];
+    var time = keywords[1];
+    // aliases for days
+    var days = {
+        "monday": 0,
+        "mon": 0,
+        "tuesday": 1,
+        "tues": 1,
+        "tue": 1,
+        "wednesday": 2,
+        "wed": 2,
+        "thursday": 3,
+        "thurs": 3,
+        "thur": 3,
+        "thu": 3,
+        "friday": 4,
+        "fri": 4,
+        "saturday": 5,
+        "sat": 5,
+        "sunday": 6,
+        "sun": 6
+    }
+    var today = new Date();
+    today.setHours(0);
+    today.setMinutes(0);
+    today.setSeconds(0);
+    var thisDate;
+    // basic string understanding
+    switch (date) {
+        case "today":
+            thisDate = today;
+            break;
+        case "tomorrow":
+            thisDate = today;
+            thisDate.setDate(thisDate.getDate() + 1);
+            break;
+        case "yesterday":
+            thisDate = today;
+            thisDate.setDate(thisDate.getDate() + -1);
+            break;
+        case "week":
+        case "next week":
+            thisDate = today;
+            thisDate.setDate(thisDate.getDate() + 7);
+            break;
+        default:
+            if (typeof days[date] === "number") {
+                // compare given day with today
+                var delta = days[date] - today.getDay() + 1;
+                // shift by a week if already passed
+                if (delta <= 0) {
+                    delta += 7;
+                }
+                thisDate = today;
+                thisDate.setDate(thisDate.getDate() + delta);
+            } else {
+                // no matches, try standard parse
+                var parts = date.split("/");
+                thisDate = today;
+                if (parts[0]) {
+                    thisDate.setDate(parts[0]);
+                    if (parts[1]) {
+                        thisDate.setMonth(parts[1]);
+                        if (parts[2]) {
+                            thisDate.setFullYear(parts[2]);
+                        }
+                    }
+                }
+                // failed to get a date
+                if (isNaN(thisDate)) {
+                    thisDate = null;
+                }
+            }
+            break;
+    }
+    var due = false;
+    // match found, now try to find a time
+    if (thisDate && !isNaN(thisDate)) {
+        due = {
+            date: thisDate,
+            time: false
+        };
+        // if a time is specified
+        if (time) {
+            var thisTime = new Date();
+            if (time !== "now") {
+                // no matches, try standard parse
+                var parts = time.split(":");
+                thisTime = today;
+                if (parts[0]) {
+                    thisTime.setHours(parts[0]);
+                    if (parts[1]) {
+                        thisTime.setMinutes(parts[1]);
+                        if (parts[2]) {
+                            thisTime.setSeconds(parts[2]);
+                        }
+                    }
+                }
+                // failed to get a date
+                if (isNaN(thisTime)) {
+                    thisTime = null;
+                }
+            }
+            // valid time calculated
+            if (thisTime && !isNaN(thisTime)) {
+                // update date object
+                thisDate.setHours(thisTime.getHours());
+                thisDate.setMinutes(thisTime.getMinutes());
+                thisDate.setSeconds(thisTime.getSeconds());
+                due = {
+                    date: thisDate,
+                    time: true
+                };
+            }
+        }
+    }
+    return due;
 }
 // main DoX API: access to tasks and helper methods
 // - self-calling function returns an object instance
