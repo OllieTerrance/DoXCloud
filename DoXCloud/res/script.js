@@ -209,14 +209,11 @@ $(document).ready(function() {
     });
     // handler for confirming add task window
     $("#modalAddSave").on("click", function(e) {
+        var task;
         // using quick add
         if ($("#modalAddFields").prop("style").display === "none") {
             // use the Task constructor to parse
-            var task = new Task($("#modalAddString").val());
-            // if valid, add new task
-            if (task) {
-                DoX.addTask(task);
-            }
+            task = new Task($("#modalAddString").val());
         // using all fields
         } else {
             // fill in basic details
@@ -232,7 +229,7 @@ $(document).ready(function() {
                     days: 1,
                     fromDue: $("#modalAddRepeatFrom").val() === "due"
                 },
-                tags: $("#modalAddTags").val().split(",")
+                tags: $("#modalAddTags").val() === "" ? [] : $("#modalAddTags").val().split(",")
             };
             // use preset values for due date
             switch ($("#modalAddDuePreset").val()) {
@@ -284,14 +281,19 @@ $(document).ready(function() {
                     }
                     break;
             }
-            // add new task
-            DoX.addTask(new Task(params));
+            // create new task
+            task = new Task(params);
         }
-        // close add task window
-        $("#modalAdd").modal("hide");
-        // save and refresh the list
-        DoX.saveTasks();
-        UI.listRefresh();
+        // if valid, add new task
+        if (task) {
+            DoX.addTask(task);
+            // close add task window
+            $("#modalAdd").modal("hide");
+            // save and refresh the list
+            DoX.saveTasks();
+            UI.listRefresh();
+            UI.alerts.add("Added task <strong>" + task.title + "</strong>.", "info", "task", true, 3000);
+        }
     });
     // form reset handler on modal close
     $("#modalAdd").on("hidden.bs.modal", function(e) {
@@ -665,14 +667,21 @@ var UI = new (function UI() {
                         DoX.doneTask(index, ui.tab === "tasks");
                         DoX.saveTasks();
                         ui.listRefresh();
+                        if (ui.tab === "tasks") {
+                            ui.alerts.add("Marked task <strong>" + DoX.done[DoX.done.length - 1].title + "</strong> as complete.  Well done!", "success", "task", true, 3000);
+                        } else {
+                            ui.alerts.add("Unmarked task <strong>" + DoX.tasks[DoX.tasks.length - 1].title + "</strong> as complete.  Oh...", "warning", "task", true, 3000);
+                        }
                     });
                     controls.append(btnDone);
                     controls.append($("<button class='btn btn-xs btn-warning'>Edit</button>"));
                     var btnDelete = $("<button class='btn btn-xs btn-danger'>Delete</button>");
                     btnDelete.on("click", function(e) {
+                        var title = (ui.tab === "tasks" ? DoX.tasks : DoX.done)[index].title;
                         DoX.deleteTask(index, ui.tab === "tasks");
                         DoX.saveTasks();
                         ui.listRefresh();
+                        ui.alerts.add("Deleted task <strong>" + title + "</strong>.  Oh...", "danger", "task", true, 3000);
                     });
                     controls.append(btnDelete);
                     row.append(controls);
@@ -694,8 +703,8 @@ var UI = new (function UI() {
     // subclass for managing Bootstrap alerts
     this.alerts = {
         // add an alert to the notification box
-        add: function add(message, type, tag, dismissable) {
-            var alert = $("<div class='alert alert-dismissable'>");
+        add: function add(message, type, tag, dismissable, autoDismiss) {
+            var alert = $("<div class='alert alert-dismissable fade in'>");
             // add class if defined
             if (type) {
                 alert.addClass("alert-" + type);
@@ -707,6 +716,12 @@ var UI = new (function UI() {
             // default to true if undefined
             if (dismissable !== false) {
                 alert.append($("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>"));
+            }
+            // auto-dismiss after given time if specified
+            if (autoDismiss) {
+                setTimeout(function() {
+                    alert.alert("close");
+                }, autoDismiss);
             }
             alert.append($("<span>" + message + "</span>"));
             $("#notifBox").append(alert);
