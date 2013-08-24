@@ -310,7 +310,7 @@ $(document).ready(function() {
         $.ajax({
             url: "/api/auth.php",
             dataType: "json",
-            method: "GET",
+            method: "POST",
             data: {
                 submit: "logout"
             },
@@ -623,12 +623,21 @@ var UI = new (function UI() {
         if (DoX.tasks.length) {
             $(DoX.tasks).each(function(index, task) {
                 var row = $("<tr/>");
+                var priClasses = ["info", "success", "warning", "danger"];
+                row.addClass(priClasses[task.pri]);
                 row.append($("<td>" + (index + 1) + "</td>"));
                 row.append($("<td>" + task.title + "</td>"));
                 row.append($("<td>" + task.pri + "</td>"));
                 row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
                 row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
                 row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
+                var controls = $("<td/>");
+                controls.append($("<button class='btn btn-xs btn-success'>Done</button>"));
+                controls.append($("<span>&nbsp;</span>"));
+                controls.append($("<button class='btn btn-xs btn-warning'>Edit</button>"));
+                controls.append($("<span>&nbsp;</span>"));
+                controls.append($("<button class='btn btn-xs btn-danger'>Delete</button>"));
+                row.append(controls);
                 $("#listTasks").append(row);
             });
         // no user tasks, show column spanning information message
