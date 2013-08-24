@@ -10,6 +10,9 @@ body {
 .table-stack-small {
     display: none;
 }
+table button {
+    margin-right: 5px;
+}
 @media (max-width: 767px) {
     .table-stack-large { 
       display: none;
@@ -17,6 +20,12 @@ body {
     .table-stack-small {
         display: table;
     }
+    table button {
+        margin-right: 5px;
+    }
+}
+.st-head-row {
+    font-weight: normal;
 }
 .st-head-row-main {
     display: none;
@@ -24,7 +33,4 @@ body {
 .st-key {
     width: 20%;
     text-align: right;
-}
-.table-stack-small:not([class]) {
-    height: 7.5px;
 }

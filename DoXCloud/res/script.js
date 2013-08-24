@@ -97,7 +97,7 @@ $(document).ready(function() {
         return quoteOpen ? false : out;
     }
     // handler for navbar links to select clicked item, deselect others
-    $("#tabList li a").on("click", function() {
+    $("#tabList a").on("click", function() {
         // get hash part from link href
         var id = this.hash.substr(1);
         // map all links in menu
@@ -110,6 +110,11 @@ $(document).ready(function() {
                 $(item).removeClass("active");
             }
         });
+        // refresh task list with new context
+        UI.tab = id;
+        UI.listRefresh();
+        // don't follow hash link
+        return false;
     });
     // turn tag field in add task window into a tag editor field
     $("#modalAddTags").tagsInput({
@@ -210,8 +215,7 @@ $(document).ready(function() {
             var task = new Task($("#modalAddString").val());
             // if valid, add new task
             if (task) {
-                DoX.tasks.push(task);
-                DoX.saveTasks();
+                DoX.addTask(task);
             }
         // using all fields
         } else {
@@ -281,12 +285,12 @@ $(document).ready(function() {
                     break;
             }
             // add new task
-            DoX.tasks.push(new Task(params));
-            DoX.saveTasks();
+            DoX.addTask(new Task(params));
         }
         // close add task window
         $("#modalAdd").modal("hide");
-        // refresh the list
+        // save and refresh the list
+        DoX.saveTasks();
         UI.listRefresh();
     });
     // form reset handler on modal close
@@ -548,6 +552,25 @@ var DoX = new (function DoX() {
     this.tasks = [];
     // list of completed tasks
     this.done = [];
+    // add a new task to the list
+    this.addTask = function addTask(task) {
+        this.tasks.push(task);
+    };
+    // (un)mark a task as complete
+    this.doneTask = function doneTask(pos, isTasks) {
+        if (isTasks) {
+            // remove task at position from tasks, append to done
+            this.done.push(this.tasks.splice(pos, 1)[0]);
+        } else {
+            // remove task at position from done, append to tasks
+            this.tasks.push(this.done.splice(pos, 1)[0]);
+        }
+    };
+    // delete a task
+    this.deleteTask = function deleteTask(pos, isTasks) {
+        // remove task at position from tasks/done
+        (isTasks ? this.tasks : this.done).splice(pos, 1);
+    };
     // save tasks to local storage
     this.saveTasks = function saveTasks() {
         if (Store.has()) {
@@ -611,6 +634,8 @@ var DoX = new (function DoX() {
 // UI API: helper methods for controlling the frontend
 // - self-calling function returns an object instance
 var UI = new (function UI() {
+    // store current tab name
+    this.tab = "tasks";
     // build task list table
     this.listRefresh = function listRefresh() {
         // clear all table rows, except for headers
@@ -619,33 +644,47 @@ var UI = new (function UI() {
                 item.remove();
             }
         });
-        // user has tasks, display them
-        if (DoX.tasks.length) {
-            $(DoX.tasks).each(function(index, task) {
+        // anonymous function to avoid scoping issue on this.tab
+        (function(tasks, ui) {
+            // user has tasks, display them
+            if (tasks.length) {
+                $(tasks).each(function(index, task) {
+                    var row = $("<tr/>");
+                    var priClasses = ["active", "success", "warning", "danger"];
+                    row.addClass(priClasses[task.pri]);
+                    row.append($("<td>" + (index + 1) + "</td>"));
+                    row.append($("<td>" + task.title + "</td>"));
+                    row.append($("<td>" + task.pri + "</td>"));
+                    row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
+                    row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
+                    row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
+                    var controls = $("<td/>");
+                    var btnDone = $("<button class='btn btn-xs'>" + (ui.tab === "tasks" ? "Done" : "Undo") + "</button>");
+                    btnDone.addClass(ui.tab === "tasks" ? "btn-success" : "btn-default");
+                    btnDone.on("click", function(e) {
+                        DoX.doneTask(index, ui.tab === "tasks");
+                        DoX.saveTasks();
+                        ui.listRefresh();
+                    });
+                    controls.append(btnDone);
+                    controls.append($("<button class='btn btn-xs btn-warning'>Edit</button>"));
+                    var btnDelete = $("<button class='btn btn-xs btn-danger'>Delete</button>");
+                    btnDelete.on("click", function(e) {
+                        DoX.deleteTask(index, ui.tab === "tasks");
+                        DoX.saveTasks();
+                        ui.listRefresh();
+                    });
+                    controls.append(btnDelete);
+                    row.append(controls);
+                    $("#listTasks").append(row);
+                });
+            // no user tasks, show column spanning information message
+            } else {
                 var row = $("<tr/>");
-                var priClasses = ["info", "success", "warning", "danger"];
-                row.addClass(priClasses[task.pri]);
-                row.append($("<td>" + (index + 1) + "</td>"));
-                row.append($("<td>" + task.title + "</td>"));
-                row.append($("<td>" + task.pri + "</td>"));
-                row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
-                row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
-                row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
-                var controls = $("<td/>");
-                controls.append($("<button class='btn btn-xs btn-success'>Done</button>"));
-                controls.append($("<span>&nbsp;</span>"));
-                controls.append($("<button class='btn btn-xs btn-warning'>Edit</button>"));
-                controls.append($("<span>&nbsp;</span>"));
-                controls.append($("<button class='btn btn-xs btn-danger'>Delete</button>"));
-                row.append(controls);
+                row.append($("<td colspan='7'>No tasks to show.  " + (ui.tab === "tasks" ? "Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?" : "Go and complete some!") + "</td>"));
                 $("#listTasks").append(row);
-            });
-        // no user tasks, show column spanning information message
-        } else {
-            var row = $("<tr/>");
-            row.append($("<td colspan='6'>No tasks to show.  Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?</td>"));
-            $("#listTasks").append(row);
-        }
+            }
+        })((this.tab === "tasks" ? DoX.tasks : DoX.done), this);
         // reset table stacking for mobile devices
         $(".table-stack.table-stack-small").remove();
         $("#listTasks").stacktable({myClass: "table table-bordered table-striped table-stack table-stack-small"});
@@ -676,6 +715,52 @@ var UI = new (function UI() {
         clear: function clear(tag) {
             $(".alert" + (tag ? ".notif-" + tag : "")).remove();
         }
+    };
+    // confirm actions by requiring second click of button within 2 seconds
+    this.sure = function sure(element, callback) {
+        var label, event, form;
+        // define function to reset label to default
+        var resetLabel = function() {
+            // is a form, reset submit button
+            if (form) {
+                element.value = label;
+                form.onsubmit = event;
+            // reset actual button
+            } else {
+                if (element.nodeName === "BUTTON") element.innerHTML = label;
+                else if (element.nodeName === "INPUT") element.value = label;
+                element.onclick = event;
+            }
+        };
+        // define callback wrapper to reset label first
+        var callbackWrapper = function() {
+            resetLabel();
+            callback();
+        };
+        // element is a form, override form's onsubmit but visible cue on submit button instead
+        if (element.nodeName === "FORM") {
+            form = element;
+            element = $("#" + element.id + " input[type=submit]").get(0);
+            label = element.value;
+            element.value = "Sure?";
+            event = form.onsubmit;
+            form.onsubmit = callbackWrapper;
+        } else {
+            // button label is entire internal HTML
+            if (element.nodeName === "BUTTON") {
+                label = element.innerHTML;
+                element.innerHTML = "Sure?";
+            // input has a value parameter
+            } else if (element.nodeName === "INPUT") {
+                label = element.value;
+                element.value = "Sure?";
+            }
+            // override callback
+            event = element.onclick;
+            element.onclick = callbackWrapper;
+        }
+        // button hasn't been pressed in time, revert
+        setTimeout(resetLabel, 2000);
     };
 })();
 // Store API: light shorthand wrapper for local storage
