@@ -309,6 +309,11 @@ $(document).ready(function() {
         $("#modalAddTags").importTags("");
         $("#modalAddString").val("");
     });
+    // form reset handler on modal close
+    $("#modalExport").on("show.bs.modal", function(e) {
+        $("#edtExportTasks").val(DoX.tasks.join("\n"));
+        $("#edtExportDone").val(DoX.done.join("\n"));
+    });
     // handler for logout option in menu
     $("#modalLogoutConfirm").on("click", function (e) {
         // disable controls to prevent sending multiple times
