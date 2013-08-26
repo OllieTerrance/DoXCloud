@@ -296,6 +296,7 @@ $(document).ready(function() {
     });
     // form reset handler on modal close
     $("#modalAdd").on("hidden.bs.modal", function(e) {
+        // clear fields
         $("#modalAddTitle").val("");
         $("#modalAddDesc").val("");
         $("#modalAddPri").val("0");
@@ -307,6 +308,12 @@ $(document).ready(function() {
         $("#modalAddRepeatFrom").val("completion");
         $("#modalAddTags").importTags("");
         $("#modalAddString").val("");
+        $("#modalAddMulti").val("");
+        $("#modalAddCommon").val("");
+        // reset to field view
+        $("#modalAddFields").prop("style").display = "block";
+        $("#modalAddQuick, #modalAddMulti").prop("style").display = "none";
+        $("#modalAddToggleText").html("All Fields&nbsp;");
     });
     // form reset handler on modal close
     $("#modalExport").on("show.bs.modal", function(e) {
