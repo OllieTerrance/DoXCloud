@@ -34,3 +34,7 @@ table button {
     width: 20%;
     text-align: right;
 }
+ul.dropdown-menu li {
+    text-align: left;
+    cursor: pointer;
+}

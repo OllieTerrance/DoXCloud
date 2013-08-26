@@ -192,30 +192,24 @@ $(document).ready(function() {
         }
     });
     // toggle between all fields and quick add on add task window
-    $("#modalAddToggle").on("click", function(e) {
-        if ($("#modalAddFields").prop("style").display === "none") {
-            // hide quick add, show fields
-            $("#modalAddQuick").prop("style").display = "none";
-            $("#modalAddFields").prop("style").display = "block";
-            $("#modalAddToggle").html("Quick Add");
-            $("#modalAddString").focus();
-        } else {
-            // hide fields, show quick add
-            $("#modalAddFields").prop("style").display = "none";
-            $("#modalAddQuick").prop("style").display = "block";
-            $("#modalAddToggle").html("Show Fields");
-            $("#modalAddTitle").focus();
-        }
+    $("#modalAddToggleFields, #modalAddToggleQuick, #modalAddToggleMulti").on("click", function(e) {
+        // note selected item as "this" will be replaced in each scope
+        var clicked = this;
+        // map dropdown options to blocks
+        var blocks = ["#modalAddFields", "#modalAddQuick", "#modalAddMulti"];
+        $("#modalAddToggleFields, #modalAddToggleQuick, #modalAddToggleMulti").each(function(index, item) {
+            var show = (this === clicked);
+            if (show) {
+                $("#modalAddToggleText").html(this.innerHTML + "&nbsp;");
+            }
+            $(blocks[index]).prop("style").display = (show ? "block" : "none");
+        });
     });
     // handler for confirming add task window
     $("#modalAddSave").on("click", function(e) {
         var task;
-        // using quick add
-        if ($("#modalAddFields").prop("style").display === "none") {
-            // use the Task constructor to parse
-            task = new Task($("#modalAddString").val());
         // using all fields
-        } else {
+        if ($("#modalAddFields").prop("style").display !== "none") {
             // fill in basic details
             var params = {
                 title: $("#modalAddTitle").val(),
@@ -283,7 +277,12 @@ $(document).ready(function() {
             }
             // create new task
             task = new Task(params);
-        }
+        // using quick add
+        } else if ($("#modalAddQuick").prop("style").display !== "none") {
+            // use the Task constructor to parse
+            task = new Task($("#modalAddString").val());
+        // using multi editor
+        } else if ($("#modalAddMulti").prop("style").display !== "none") {}
         // if valid, add new task
         if (task) {
             DoX.addTask(task);
@@ -777,7 +776,8 @@ var UI = new (function UI() {
         (function(tasks, ui) {
             // user has tasks, display them
             if (tasks.length) {
-                $(tasks).each(function(index, task) {
+                $(tasks).each(function(index, item) {
+                    var task = item;
                     var row = $("<tr/>");
                     var priClasses = ["active", "success", "warning", "danger"];
                     row.addClass(priClasses[task.pri]);
