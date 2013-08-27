@@ -277,15 +277,46 @@ $(document).ready(function() {
             }
             // create new task
             task = new Task(params);
+            // if valid, add the task
+            if (task) {
+                DoX.addTask(task);
+            }
         // using quick add
         } else if ($("#modalAddQuick").prop("style").display !== "none") {
             // use the Task constructor to parse
             task = new Task($("#modalAddString").val());
+            // if valid, add the task
+            if (task) {
+                DoX.addTask(task);
+            }
         // using multi editor
-        } else if ($("#modalAddMulti").prop("style").display !== "none") {}
-        // if valid, add new task
+        } else if ($("#modalAddMulti").prop("style").display !== "none") {
+            // split tasks by new line to get a list of strings
+            var tasks = $("#modalAddLines").val().split("\n");
+            var common = $("#modalAddCommon").val();
+            // check at least one is valid
+            var oneValid = false;
+            for (var x in tasks) {
+                // ignore prototype methods
+                if (tasks.hasOwnProperty(x)) {
+                    // add common part first, then override parameters with custom parts
+                    var str = common + " " + tasks[x];
+                    // use the Task constructor to parse
+                    var task = new Task(str);
+                    // if valid, add the task
+                    if (task) {
+                        DoX.addTask(task);
+                        oneValid = true;
+                    }
+                }
+            }
+            if (oneValid) {
+                // make truthy to run save and close below
+                task = true;
+            }
+        }
+        // if valid, save and close
         if (task) {
-            DoX.addTask(task);
             // close add task window
             $("#modalAdd").modal("hide");
             // save and refresh the list
