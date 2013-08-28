@@ -221,6 +221,94 @@
                 </div>
             </div>
         </div>
+        <div id="modalEdit" class="modal fade">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Edit Task</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="modalEditFields" class="form-horizontal" role="form">
+                            <div class="form-group">
+                                <label for="modalEditTitle" class="col-lg-2 control-label">Title</label>
+                                <div class="col-lg-10">
+                                    <input id="modalEditTitle" class="form-control" placeholder="Clean out garage"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="modalEditDesc" class="col-lg-2 control-label">Description</label>
+                                <div class="col-lg-10">
+                                    <textarea id="modalEditDesc" class="form-control" placeholder="Lots of junk to clear &ndash; yard sale?"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="modalEditPri" class="col-lg-2 control-label">Priority</label>
+                                <div class="col-lg-10">
+                                    <select id="modalEditPri" class="form-control">
+                                        <option value="0" class="alert-info">0 &ndash; Low</option>
+                                        <option value="1" class="alert-success">1 &ndash; Medium</option>
+                                        <option value="2" class="alert">2 &ndash; High</option>
+                                        <option value="3" class="alert-danger">3 &ndash; Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="modalEditDuePreset" class="col-lg-2 control-label">Due</label>
+                                <div class="col-lg-3">
+                                    <select id="modalEditDuePreset" class="form-control">
+                                        <option value="none">Not due</option>
+                                        <option value="today">Today</option>
+                                        <option value="now">Now</option>
+                                        <option value="yesterday">Yesterday</option>
+                                        <option value="tomorrow">Tomorrow</option>
+                                        <option value="week">Next week</option>
+                                        <option value="custom">Custom...</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-4">
+                                    <input id="modalEditDueDate" type="date" class="form-control" disabled/>
+                                </div>
+                                <div class="col-lg-3">
+                                    <input id="modalEditDueTime" type="time" class="form-control" step="1" disabled/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="modalEditRepeatPreset" class="col-lg-2 control-label">Repeat</label>
+                                <div class="col-lg-4">
+                                    <select id="modalEditRepeatPreset" class="form-control">
+                                        <option value="none">No repeat</option>
+                                        <option value="day">Every day</option>
+                                        <option value="week">Every week</option>
+                                        <option value="fortnight">Every fortnight</option>
+                                        <option value="custom">Custom...</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-2">
+                                    <input id="modalEditRepeatDays" type="number" class="form-control" min="1" placeholder="n/a" disabled/>
+                                </div>
+                                <div class="col-lg-4">
+                                    <select id="modalEditRepeatFrom" class="form-control" disabled>
+                                        <option value="due">From due date</option>
+                                        <option value="completion">From completion</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="modalEditTags_tag" class="col-lg-2 control-label">Tags</label>
+                                <div class="col-lg-10">
+                                    <input id="modalEditTags" class="form-control" placeholder="Home Cat"/>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="modalEditSave" type="button" class="btn btn-primary">Edit</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="modalHowToWrite" class="modal fade">
             <div class="modal-dialog">
                 <div class="modal-content">

@@ -117,7 +117,7 @@ $(document).ready(function() {
         return false;
     });
     // turn tag field in add task window into a tag editor field
-    $("#modalAddTags").tagsInput({
+    $("#modalAddTags, #modalEditTags").tagsInput({
         defaultText: "Add...",
         // override size to use Bootstrap CSS
         height: "auto",
@@ -126,6 +126,7 @@ $(document).ready(function() {
     // re-apply Bootstrap control theme
     setTimeout(function() {
         $("#modalAddTags_tagsinput").addClass("form-control"); 
+        $("#modalEditTags_tagsinput").addClass("form-control"); 
     }, 50);
     // handler for updating due date/time on preset selection in add task window
     $("#modalAddDuePreset").on("change", function(e) {
@@ -341,10 +342,98 @@ $(document).ready(function() {
         $("#modalAddString").val("");
         $("#modalAddMulti").val("");
         $("#modalAddCommon").val("");
+        // disable fields
+        $("#modalAddDueDate").attr("disabled", "disabled");
+        $("#modalAddDueTime").attr("disabled", "disabled");
+        $("#modalAddRepeatDays").attr("disabled", "disabled");
+        $("#modalAddRepeatFrom").attr("disabled", "disabled");
         // reset to field view
         $("#modalAddFields").prop("style").display = "block";
         $("#modalAddQuick, #modalAddMulti").prop("style").display = "none";
         $("#modalAddToggleText").html("All Fields&nbsp;");
+    });
+    // handler for updating due date/time on preset selection in edit task window
+    $("#modalEditDuePreset").on("change", function(e) {
+        var newDate = new Date();
+        var val = this.value;
+        // enable fields if custom enabled
+        if (val === "custom") {
+            $("#modalEditDueDate").removeAttr("disabled");
+            $("#modalEditDueTime").removeAttr("disabled");
+        } else {
+            // no due date, clear fields
+            if (val === "none") {
+                $("#modalEditDueDate").val("");
+                $("#modalEditDueTime").val("");
+            } else {
+                // include time in field
+                if (val === "now") {
+                    $("#modalEditDueTime").val(newDate.toISOString().substr(11, 8));
+                } else {
+                    // only use a date
+                    $("#modalEditDueTime").val("");
+                    // set offset according to choice
+                    if (val === "yesterday") {
+                        newDate.setDate(newDate.getDate() - 1);
+                    } else if (val === "tomorrow") {
+                        newDate.setDate(newDate.getDate() + 1);
+                    } else if (val === "week") {
+                        newDate.setDate(newDate.getDate() + 7);
+                    }
+                }
+                // update date field
+                $("#modalEditDueDate").val(newDate.toISOString().substr(0, 10));
+            }
+            // disable fields (handled by preset instead)
+            $("#modalEditDueDate").attr("disabled", "disabled");
+            $("#modalEditDueTime").attr("disabled", "disabled");
+        }
+    });
+    // handler for updating repeat days on preset selection in edit task window
+    $("#modalEditRepeatPreset").on("change", function(e) {
+        var val = this.value;
+        // no repeat, clear field and disable options
+        if (val === "none") {
+            $("#modalEditRepeatDays").val("");
+            $("#modalEditRepeatFrom").attr("disabled", "disabled");
+        } else {
+            // some repeat option, enable from selector
+            $("#modalEditRepeatFrom").removeAttr("disabled");
+            // custom days, enable days field
+            if (val === "custom") {
+                $("#modalEditRepeatDays").removeAttr("disabled");
+            } else {
+                // disable field (handled by preset instead)
+                $("#modalEditRepeatDays").attr("disabled", "disabled");
+                // set days from preset
+                if (val === "day") {
+                    $("#modalEditRepeatDays").val("1");
+                } else if (val === "week") {
+                    $("#modalEditRepeatDays").val("7");
+                } else if (val === "fortnight") {
+                    $("#modalEditRepeatDays").val("14");
+                }
+            }
+        }
+    });
+    // form reset handler on modal close
+    $("#modalEdit").on("hidden.bs.modal", function(e) {
+        // clear fields
+        $("#modalEditTitle").val("");
+        $("#modalEditDesc").val("");
+        $("#modalEditPri").val("0");
+        $("#modalEditDuePreset").val("none");
+        $("#modalEditDueDate").val("");
+        $("#modalEditDueTime").val("");
+        $("#modalEditRepeatPreset").val("none");
+        $("#modalEditRepeatDays").val("");
+        $("#modalEditRepeatFrom").val("completion");
+        $("#modalEditTags").importTags("");
+        // disable fields
+        $("#modalEditDueDate").attr("disabled", "disabled");
+        $("#modalEditDueTime").attr("disabled", "disabled");
+        $("#modalEditRepeatDays").attr("disabled", "disabled");
+        $("#modalEditRepeatFrom").attr("disabled", "disabled");
     });
     // form reset handler on modal close
     $("#modalExport").on("show.bs.modal", function(e) {
@@ -817,6 +906,7 @@ var UI = new (function UI() {
                 $(tasks).each(function(index, item) {
                     var task = item;
                     var row = $("<tr/>");
+                    // style row according to priority
                     var priClasses = ["active", "success", "warning", "danger"];
                     row.addClass(priClasses[task.pri]);
                     row.append($("<td>" + (index + 1) + "</td>"));
@@ -826,6 +916,7 @@ var UI = new (function UI() {
                     row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
                     row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
                     var controls = $("<td/>");
+                    // button to mark as done (green) or undo (white)
                     var btnDone = $("<button class='btn btn-xs'>" + (ui.tab === "tasks" ? "Done" : "Undo") + "</button>");
                     btnDone.addClass(ui.tab === "tasks" ? "btn-success" : "btn-default");
                     btnDone.on("click", function(e) {
@@ -839,7 +930,75 @@ var UI = new (function UI() {
                         }
                     });
                     controls.append(btnDone);
-                    controls.append($("<button class='btn btn-xs btn-warning'>Edit</button>"));
+                    // edit button if not yet marked complete
+                    if (ui.tab === "tasks") {
+                        var btnEdit = $("<button class='btn btn-xs btn-warning'>Edit</button>");
+                        btnEdit.on("click", function(e) {
+                            $("#modalEdit").data("id", index);
+                            $("#modalEditTitle").val(task.title);
+                            $("#modalEditDesc").val(task.desc);
+                            $("#modalEditPri").val(task.pri);
+                            if (task.due) {
+                                if (task.due.time) {
+                                    $("#modalEditDuePreset").val("custom");
+                                    $("#modalEditDueDate").val(task.due.date.format("dd-mm-yyyy"));
+                                    $("#modalEditDueTime").val(task.due.date.format("HH:MM:SS"));
+                                } else {
+                                    var today = new Date();
+                                    today.setHours(0);
+                                    today.setMinutes(0);
+                                    today.setSeconds(0);
+                                    var offset = (task.due.date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+                                    switch (offset) {
+                                        case 0:
+                                            $("#modalEditDuePreset").val("today");
+                                            break;
+                                        case -1:
+                                            $("#modalEditDuePreset").val("yesterday");
+                                            break;
+                                        case 1:
+                                            $("#modalEditDuePreset").val("tomorrow");
+                                            break;
+                                        case 7:
+                                            $("#modalEditDuePreset").val("week");
+                                            break;
+                                        default:
+                                            $("#modalEditDuePreset").val("custom");
+                                            $("#modalEditDueDate").val(task.due.date.format("yyyy-mm-dd"));
+                                            $("#modalEditDueDate").removeAttr("disabled");
+                                            $("#modalEditDueTime").removeAttr("disabled");
+                                            break;
+                                    }
+                                }
+                            }
+                            if (task.repeat) {
+                                switch (task.repeat.days) {
+                                    case 1:
+                                        $("#modalEditRepeatPreset").val("day");
+                                        break;
+                                    case 7:
+                                        $("#modalEditRepeatPreset").val("week");
+                                        break;
+                                    case 14:
+                                        $("#modalEditRepeatPreset").val("fortnight");
+                                        break;
+                                    default:
+                                        $("#modalEditRepeatPreset").val("custom");
+                                        $("#modalEditRepeatDays").removeAttr("disabled");
+                                        break;
+                                }
+                                $("#modalEditRepeatDays").val(task.repeat.days);
+                                if (task.repeat.fromDue) {
+                                    $("#modalEditRepeatFrom").val("due");
+                                }
+                                $("#modalEditRepeatFrom").removeAttr("disabled");
+                            }
+                            $("#modalEditTags").importTags(task.tags.join(","));
+                            $("#modalEdit").modal("show");
+                        });
+                        controls.append(btnEdit);
+                    }
+                    // delete button
                     var btnDelete = $("<button class='btn btn-xs btn-danger'>Delete</button>");
                     btnDelete.on("click", function(e) {
                         var title = (ui.tab === "tasks" ? DoX.tasks : DoX.done)[index].title;
