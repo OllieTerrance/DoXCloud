@@ -416,6 +416,80 @@ $(document).ready(function() {
             }
         }
     });
+    // handler for confirming edit task window
+    $("#modalEditSave").on("click", function(e) {
+        // fetch task
+        var task = DoX.tasks[$("#modalEdit").data("id")];
+        // update fields
+        task.title = $("#modalEditTitle").val();
+        task.desc = $("#modalEditDesc").val();
+        task.due = {
+            date: new Date(),
+            time: false
+        };
+        task.repeat = {
+            days: 1,
+            fromDue: $("#modalAddRepeatFrom").val() === "due"
+        };
+        task.pri = parseInt($("#modalEditPri").val());
+        task.tags = $("#modalEditTags").val() === "" ? [] : $("#modalEditTags").val().split(",");
+        // use preset values for due date
+        switch ($("#modalEditDuePreset").val()) {
+            case "none":
+                task.due = false;
+                break;
+            case "now":
+                task.due.time = true;
+                break;
+            case "yesterday":
+                task.due.date.setDate(task.due.date.getDate() - 1);
+                break;
+            case "tomorrow":
+                task.due.date.setDate(task.due.date.getDate() + 1);
+                break;
+            case "week":
+                task.due.date.setDate(task.due.date.getDate() + 1);
+                break;
+            case "custom":
+                // custom due date, read fields
+                task.due.date = new Date($("#modalEditDueDate").val() + " " + $("#modalEditDueTime").val());
+                // !! converts to boolean (true if value is truthy)
+                task.due.time = !!$("#modalEditDueTime").val();
+                break;
+        }
+        // due date but no time
+        if (task.due && !task.due.time) {
+            // clear time values
+            task.due.date.setHours(0);
+            task.due.date.setMinutes(0);
+            task.due.date.setSeconds(0);
+        }
+        // use preset values for repeat
+        switch ($("#modalEditRepeatPreset").val()) {
+            case "none":
+                task.repeat = false;
+                break;
+            case "week":
+                task.repeat.days = 7;
+                break;
+            case "fortnight":
+                task.repeat.days = 14;
+                break;
+            case "custom":
+                // custom due date, read field
+                task.repeat.days = parseInt($("#modalEditRepeatDays").val());
+                if (task.repeat.days < 1) {
+                    task.repeat = false;
+                }
+                break;
+        }
+        // close edit task window
+        $("#modalEdit").modal("hide");
+        // save and refresh the list
+        DoX.saveTasks();
+        UI.listRefresh();
+        UI.alerts.add("Updated task <strong>" + task.title + "</strong>.", "warning", "task", true, 3000);
+    });
     // form reset handler on modal close
     $("#modalEdit").on("hidden.bs.modal", function(e) {
         // clear fields
@@ -434,6 +508,8 @@ $(document).ready(function() {
         $("#modalEditDueTime").attr("disabled", "disabled");
         $("#modalEditRepeatDays").attr("disabled", "disabled");
         $("#modalEditRepeatFrom").attr("disabled", "disabled");
+        // clear data attribute
+        $("#modalEdit").removeData("id");
     });
     // form reset handler on modal close
     $("#modalExport").on("show.bs.modal", function(e) {
