@@ -190,6 +190,10 @@ $(document).ready(function() {
                     $("#modalAddRepeatDays").val("14");
                 }
             }
+            // if no due date set, set it to today
+            if ($("#modalAddDuePreset").val() === "none") {
+                $("#modalAddDuePreset").val("today").trigger("change");
+            }
         }
     });
     // toggle between all fields and quick add on add task window
@@ -413,6 +417,10 @@ $(document).ready(function() {
                 } else if (val === "fortnight") {
                     $("#modalEditRepeatDays").val("14");
                 }
+            }
+            // if no due date set, set it to today
+            if ($("#modalEditDuePreset").val() === "none") {
+                $("#modalEditDuePreset").val("today").trigger("change");
             }
         }
     });
