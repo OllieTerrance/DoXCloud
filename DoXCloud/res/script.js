@@ -891,12 +891,17 @@ var DoX = new (function DoX() {
     this.tasks = [];
     // list of completed tasks
     this.done = [];
+    // shorthand to defaulting a variable
+    function def(val, alt) {
+        return typeof val === "undefined" ? alt : val;
+    }
     // add a new task to the list
     this.addTask = function addTask(task) {
         this.tasks.push(task);
     };
     // (un)mark a task as complete
     this.doneTask = function doneTask(pos, isTasks) {
+        isTasks = def(isTasks, true);
         if (isTasks) {
             // remove task at position from tasks, append to done
             this.done.push(this.tasks.splice(pos, 1)[0]);
@@ -905,8 +910,16 @@ var DoX = new (function DoX() {
             this.tasks.push(this.done.splice(pos, 1)[0]);
         }
     };
+    // move a task to a different position
+    this.moveTask = function moveTask(pos, newPos, isTasks) {
+        isTasks = def(isTasks, true);
+        var tasks = (isTasks ? this.tasks : this.done);
+        // remove task and re-insert at given position
+        tasks.splice(newPos, 0, tasks.splice(pos, 1)[0]);
+    };
     // delete a task
     this.deleteTask = function deleteTask(pos, isTasks) {
+        isTasks = def(isTasks, true);
         // remove task at position from tasks/done
         (isTasks ? this.tasks : this.done).splice(pos, 1);
     };
@@ -1081,6 +1094,25 @@ var UI = new (function UI() {
                             $("#modalEdit").modal("show");
                         });
                         controls.append(btnEdit);
+                        // move button/menu
+                        var drpMove = $("<span class='dropdown'/>");
+                        var btnMove = $("<button class='btn btn-xs btn-default dropdown-toggle' data-toggle='dropdown'>Move <span class='caret'></span></button>");
+                        var mnuMove = $("<ul class='dropdown-menu' role='menu'/>");
+                        var items = [["Top", 0], ["Up", index - 1], ["Down", index + 1], ["Bottom", DoX.tasks.length - 1]];
+                        $.each(items, function(subIndex, subItem) {
+                            var wrap = $("<li/>");
+                            var link = $("<a>" + subItem[0] + "</a>");
+                            link.on("click", function(e) {
+                                DoX.moveTask(index, subItem[1]);
+                                ui.listRefresh();
+                            });
+                            wrap.append(link);
+                            mnuMove.append(wrap);
+                        });
+                        drpMove.append(btnMove);
+                        drpMove.append(mnuMove);
+                        controls.append(drpMove);
+                        btnMove.dropdown();
                     }
                     // delete button
                     var btnDelete = $("<button class='btn btn-xs btn-danger'>Delete</button>");
