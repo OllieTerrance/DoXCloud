@@ -327,7 +327,7 @@ $(document).ready(function() {
             // save and refresh the list
             DoX.saveTasks();
             UI.listRefresh();
-            UI.alerts.add("Added task <strong>" + task.title + "</strong>.", "info", "task", true, 3000);
+            UI.alerts.add("Added task <strong>" + UI.escape(task.title) + "</strong>.", "info", "task", true, 3000);
         }
     });
     // form reset handler on modal close
@@ -496,7 +496,7 @@ $(document).ready(function() {
         // save and refresh the list
         DoX.saveTasks();
         UI.listRefresh();
-        UI.alerts.add("Updated task <strong>" + task.title + "</strong>.", "warning", "task", true, 3000);
+        UI.alerts.add("Updated task <strong>" + UI.escape(task.title) + "</strong>.", "warning", "task", true, 3000);
     });
     // form reset handler on modal close
     $("#modalEdit").on("hidden.bs.modal", function(e) {
@@ -595,7 +595,7 @@ function Task(params) {
                         params.id = arg.substr(1);
                     // ~ description
                     } else if (arg[0] === "~" && arg.length > 1) {
-                        params.desc = arg.substr(1).replace("|", "\n");
+                        params.desc = arg.substr(1).replace(/\|/g, "\n");
                     // ! priority (numerical)
                     } else if (arg.match(/^![0-3]$/)) {
                         params.pri = parseInt(arg[1]);
@@ -1007,7 +1007,13 @@ var UI = new (function UI() {
                     var priClasses = ["active", "success", "warning", "danger"];
                     row.addClass(priClasses[task.pri]);
                     row.append($("<td>" + (index + 1) + "</td>"));
-                    row.append($("<td>" + task.title + "</td>"));
+                    var title = $("<td>" + ui.escape(task.title) + " </td>");
+                    var btnDetails = $("<button class='btn btn-xs btn-default'>...</button>");
+                    btnDetails.on("click", function(e) {
+                        $("#listTasksDesc" + index).prop("style").display = ($("#listTasksDesc" + index).prop("style").display === "table-row") ? "none" : "table-row";
+                    });
+                    title.append(btnDetails);
+                    row.append(title);
                     row.append($("<td>" + task.pri + "</td>"));
                     row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
                     row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
@@ -1021,9 +1027,9 @@ var UI = new (function UI() {
                         DoX.saveTasks();
                         ui.listRefresh();
                         if (ui.tab === "tasks") {
-                            ui.alerts.add("Marked task <strong>" + DoX.done[DoX.done.length - 1].title + "</strong> as complete.  Well done!", "success", "task", true, 3000);
+                            ui.alerts.add("Marked task <strong>" + ui.escape(DoX.done[DoX.done.length - 1].title) + "</strong> as complete.  Well done!", "success", "task", true, 3000);
                         } else {
-                            ui.alerts.add("Unmarked task <strong>" + DoX.tasks[DoX.tasks.length - 1].title + "</strong> as complete.  Oh...", "warning", "task", true, 3000);
+                            ui.alerts.add("Unmarked task <strong>" + ui.escape(DoX.tasks[DoX.tasks.length - 1].title) + "</strong> as complete.  Oh...", "warning", "task", true, 3000);
                         }
                     });
                     controls.append(btnDone);
@@ -1121,11 +1127,15 @@ var UI = new (function UI() {
                         DoX.deleteTask(index, ui.tab === "tasks");
                         DoX.saveTasks();
                         ui.listRefresh();
-                        ui.alerts.add("Deleted task <strong>" + title + "</strong>.  Oh...", "danger", "task", true, 3000);
+                        ui.alerts.add("Deleted task <strong>" + ui.escape(title) + "</strong>.  Oh...", "danger", "task", true, 3000);
                     });
                     controls.append(btnDelete);
                     row.append(controls);
                     $("#listTasks").append(row);
+                    // description row
+                    var descRow = $("<tr id='listTasksDesc" + index + "' style='display: none;'/>");
+                    descRow.append($("<td colspan='7'/>").html(task.desc ? ui.escape(task.desc) : "<em>No description specified.</em>"));
+                    $("#listTasks").append(descRow);
                 });
             // no user tasks, show column spanning information message
             } else {
@@ -1139,6 +1149,10 @@ var UI = new (function UI() {
         $("#listTasks").stacktable({myClass: "table table-bordered table-striped table-stack table-stack-small"});
         // remove top row, add spacing between task blocks
         $('.table-stack-small tr:empty:nth-child(1)').remove();
+    };
+    // shorthand to escape HTML entities
+    this.escape = function escape(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>");
     };
     // subclass for managing Bootstrap alerts
     this.alerts = {
