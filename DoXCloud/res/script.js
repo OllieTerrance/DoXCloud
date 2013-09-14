@@ -196,19 +196,25 @@ $(document).ready(function() {
             }
         }
     });
-    // toggle between all fields and quick add on add task window
-    $("#modalAddToggleFields, #modalAddToggleQuick, #modalAddToggleMulti").on("click", function(e) {
-        // note selected item as "this" will be replaced in each scope
-        var clicked = this;
+    // toggle between all fields, quick add or multi add on add task window
+    var addLayoutSwitch = function(layout) {
         // map dropdown options to blocks
         var blocks = ["#modalAddFields", "#modalAddQuick", "#modalAddMulti"];
         $("#modalAddToggleFields, #modalAddToggleQuick, #modalAddToggleMulti").each(function(index, item) {
-            var show = (this === clicked);
+            var show = (this.id === layout);
             if (show) {
                 $("#modalAddToggleText").html(this.innerHTML + "&nbsp;");
             }
             $(blocks[index]).prop("style").display = (show ? "block" : "none");
         });
+    };
+    // update from default layout setting on show
+    $("#modalAdd").on("show.bs.modal", function(e) {
+        addLayoutSwitch("modalAddToggle" + DoX.settings.addTaskDefaultLayout);
+    });
+    // update when a new selection is made
+    $("#modalAddToggleFields, #modalAddToggleQuick, #modalAddToggleMulti").on("click", function(e) {
+        addLayoutSwitch(this.id);
     });
     // handler for confirming add task window
     $("#modalAddSave").on("click", function(e) {
@@ -519,7 +525,19 @@ $(document).ready(function() {
         // clear data attribute
         $("#modalEdit").removeData("id");
     });
-    // form reset handler on modal close
+    // prefill user settings on modal show
+    $("#modalSettings").on("show.bs.modal", function(e) {
+        $("#optAddWindowDefaultLayout").val(DoX.settings.addTaskDefaultLayout);
+    });
+    // handler for updating settings
+    $("#modalSettingsSave").on("click", function(e) {
+        DoX.settings = {
+            addTaskDefaultLayout: $("#optAddWindowDefaultLayout").val()
+        };
+        DoX.saveSettings();
+        $("#modalSettings").modal("hide");
+    });
+    // prefill export data on modal show
     $("#modalExport").on("show.bs.modal", function(e) {
         $("#edtExportTasks").val(DoX.tasks.join("\n"));
         $("#edtExportDone").val(DoX.done.join("\n"));
@@ -549,13 +567,18 @@ $(document).ready(function() {
     // if local storage available
     if (Store.has) {
         // no data yet, show first run dialog
-        if (typeof Store.get("taskCount") === "undefined") {
+        if (typeof Store.get("settings") === "undefined") {
+            DoX.settings = {
+                addTaskDefaultLayout: "Fields"
+            };
+            DoX.saveSettings();
             Store.set("taskCount", "0");
             Store.set("doneCount", "0");
             UI.listRefresh();
             $("#modalFirstRun").modal("show");
         // load from storage and pre-fill task list
         } else {
+            DoX.loadSettings();
             DoX.loadTasks();
             UI.listRefresh();
         }
@@ -900,10 +923,20 @@ var DoX = new (function DoX() {
     this.tasks = [];
     // list of completed tasks
     this.done = [];
+    // dictionary of user settings
+    this.settings = {};
     // shorthand to defaulting a variable
     function def(val, alt) {
         return typeof val === "undefined" ? alt : val;
     }
+    // save settings to local storage
+    this.saveSettings = function saveSettings() {
+        Store.set("settings", JSON.stringify(this.settings));
+    };
+    // load settings from local storage
+    this.loadSettings = function saveSettings() {
+        this.settings = JSON.parse(Store.get("settings"));
+    };
     // add a new task to the list
     this.addTask = function addTask(task) {
         this.tasks.push(task);

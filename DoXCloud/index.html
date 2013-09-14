@@ -89,7 +89,7 @@
                     <th style="width: 222px;">Controls</th>
                 </tr>
                 <tr>
-                    <td colspan="6">Loading tasks...</td>
+                    <td colspan="7">Loading tasks...</td>
                 </tr>
             </table>
         </div>
@@ -360,7 +360,18 @@
                         <h4 class="modal-title">Settings</h4>
                     </div>
                     <div class="modal-body">
-                        <p>Some settings go here.</p>
+                        <form id="modalSettingsFields" class="form-horizontal" role="form">
+                            <div class="form-group">
+                                <label for="optAddWindowDefaultLayout" class="col-lg-6 control-label">Add task window default layout</label>
+                                <div class="col-lg-5">
+                                    <select id="optAddWindowDefaultLayout" class="form-control">
+                                        <option value="Fields">All Fields</option>
+                                        <option value="Quick">Quick Add</option>
+                                        <option value="Multi">Multi Add</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div class="modal-footer">
                         <button id="modalSettingsSave" type="button" class="btn btn-primary">Save</button>
