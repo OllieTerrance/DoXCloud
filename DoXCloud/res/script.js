@@ -546,10 +546,19 @@ $(document).ready(function() {
             }
         });
     });
-    // if local storage available, load from storage and pre-fill task list
-    if (Store.has()) {
-        DoX.loadTasks();
-        UI.listRefresh();
+    // if local storage available
+    if (Store.has) {
+        // no data yet, show first run dialog
+        if (typeof Store.get("taskCount") === "undefined") {
+            Store.set("taskCount", "0");
+            Store.set("doneCount", "0");
+            UI.listRefresh();
+            $("#modalFirstRun").modal("show");
+        // load from storage and pre-fill task list
+        } else {
+            DoX.loadTasks();
+            UI.listRefresh();
+        }
     // if not, warn about no saving
     } else {
         UI.alerts.add("<strong>Warning:</strong> local storage is not available in your browser.  You will not be able to save any tasks locally.", "danger", "store");
@@ -925,31 +934,27 @@ var DoX = new (function DoX() {
     };
     // save tasks to local storage
     this.saveTasks = function saveTasks() {
-        if (Store.has()) {
-            Store.clear();
-            Store.set("taskCount", this.tasks.length);
-            Store.set("doneCount", this.done.length);
-            $(this.tasks).each(function(index, item) {
-                Store.set("task" + index, item);
-            });
-            $(this.done).each(function(index, item) {
-                Store.set("done" + index, item);
-            });
-        }
+        Store.clear();
+        Store.set("taskCount", this.tasks.length);
+        Store.set("doneCount", this.done.length);
+        $(this.tasks).each(function(index, item) {
+            Store.set("task" + index, item);
+        });
+        $(this.done).each(function(index, item) {
+            Store.set("done" + index, item);
+        });
     };
     // load tasks from local storage
     this.loadTasks = function loadTasks() {
-        if (Store.has()) {
-            var taskCount = parseInt(Store.get("taskCount"));
-            this.tasks = [];
-            for (var x = 0; x < taskCount; x++) {
-                this.tasks.push(new Task(Store.get("task" + x)));
-            }
-            var doneCount = parseInt(Store.get("doneCount"));
-            this.done = [];
-            for (var x = 0; x < doneCount; x++) {
-                this.done.push(new Task(Store.get("done" + x)));
-            }
+        var taskCount = parseInt(Store.get("taskCount"));
+        this.tasks = [];
+        for (var x = 0; x < taskCount; x++) {
+            this.tasks.push(new Task(Store.get("task" + x)));
+        }
+        var doneCount = parseInt(Store.get("doneCount"));
+        this.done = [];
+        for (var x = 0; x < doneCount; x++) {
+            this.done.push(new Task(Store.get("done" + x)));
         }
     };
     // generate a random ID
@@ -1235,27 +1240,33 @@ var UI = new (function UI() {
 // Store API: light shorthand wrapper for local storage
 var Store = new (function Store() {
     // check if local storage is available in browser
-    this.has = function has() {
-        return "localStorage" in window && localStorage !== null;
-    };
+    this.has = ("localStorage" in window && window.localStorage !== null);
+    // make a pseudo-storage object if local storage not available
+    if (!this.has) {
+        window.localStorage = {};
+    }
     // store something in local storage
     this.set = function set(key, value) {
-        return localStorage[key] = value;
+        return window.localStorage[key] = value.toString();
     }
     // retrieve something from local storage
     this.get = function get(key) {
-        return localStorage[key];
+        return window.localStorage[key];
     }
     // retrieve all items
     this.all = function all() {
-        return localStorage;
+        return window.localStorage;
     }
     // delete something in local storage
     this.del = function del(key) {
-        return delete localStorage[key];
+        return delete window.localStorage[key];
     }
     // delete all items
     this.clear = function clear() {
-        return localStorage.clear();
+        if (this.has) {
+            return window.localStorage.clear();
+        } else {
+            window.localStorage = {};
+        }
     }
 })();
