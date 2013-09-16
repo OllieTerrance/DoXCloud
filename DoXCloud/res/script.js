@@ -217,7 +217,7 @@ $(document).ready(function() {
         addLayoutSwitch(this.id);
     });
     // handler for confirming add task window
-    $("#modalAddSave").on("click", function(e) {
+    var addNewTask = function() {
         var task;
         // using all fields
         if ($("#modalAddFields").prop("style").display !== "none") {
@@ -337,6 +337,15 @@ $(document).ready(function() {
                 UI.alerts.add("Added <strong>" + task + "</strong> task" + (task > 1 ? "s" : "") + ".", "info", "task", true, 3000);
             }
         }
+    };
+    // add when clicking on Add button
+    $("#modalAddSave").on("click", addNewTask);
+    // add when pressing Enter in the form
+    $(["Fields", "Quick", "Multi"]).each(function(index, item) {
+        $("#modalAdd" + item).on("submit", function(e) {
+            addNewTask();
+            e.preventDefault();
+        });
     });
     // form reset handler on modal close
     $("#modalAdd").on("hidden.bs.modal", function(e) {
