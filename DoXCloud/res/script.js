@@ -54,7 +54,7 @@ $(document).ready(function() {
                     }
                 }
                 // nothing special here, just return a single argument
-                if (!quoteOpen && lookForClose === -1) {
+                if (arg && !quoteOpen && lookForClose === -1) {
                     out.push(arg);
                 // opening quote in this arg, search for a closing quote
                 } else if (quoteOpen && lookForClose === -1) {
@@ -306,25 +306,23 @@ $(document).ready(function() {
             var tasks = $("#modalAddLines").val().split("\n");
             var common = $("#modalAddCommon").val();
             // check at least one is valid
-            var oneValid = false;
+            var valid = 0;
             for (var x in tasks) {
                 // ignore prototype methods
                 if (tasks.hasOwnProperty(x)) {
                     // add common part first, then override parameters with custom parts
-                    var str = common + " " + tasks[x];
+                    var str = (common ? common + " " : "") + tasks[x];
                     // use the Task constructor to parse
                     var task = new Task(str);
                     // if valid, add the task
                     if (task) {
                         DoX.addTask(task);
-                        oneValid = true;
+                        valid++;
                     }
                 }
             }
-            if (oneValid) {
-                // make truthy to run save and close below
-                task = true;
-            }
+            // pass value to task
+            task = valid
         }
         // if valid, save and close
         if (task) {
@@ -333,7 +331,11 @@ $(document).ready(function() {
             // save and refresh the list
             DoX.saveTasks();
             UI.listRefresh();
-            UI.alerts.add("Added task <strong>" + UI.escape(task.title) + "</strong>.", "info", "task", true, 3000);
+            if (typeof task === "object") {
+                UI.alerts.add("Added task <strong>" + UI.escape(task.title) + "</strong>.", "info", "task", true, 3000);
+            } else {
+                UI.alerts.add("Added <strong>" + task + "</strong> task" + (task > 1 ? "s" : "") + ".", "info", "task", true, 3000);
+            }
         }
     });
     // form reset handler on modal close
@@ -350,7 +352,7 @@ $(document).ready(function() {
         $("#modalAddRepeatFrom").val("completion");
         $("#modalAddTags").importTags("");
         $("#modalAddString").val("");
-        $("#modalAddMulti").val("");
+        $("#modalAddLines").val("");
         $("#modalAddCommon").val("");
         // disable fields
         $("#modalAddDueDate").attr("disabled", "disabled");
@@ -976,6 +978,8 @@ var DoX = new (function DoX() {
         $(this.done).each(function(index, item) {
             Store.set("done" + index, item);
         });
+        // restore setting key
+        this.saveSettings();
     };
     // load tasks from local storage
     this.loadTasks = function loadTasks() {
