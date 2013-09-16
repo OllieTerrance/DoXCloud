@@ -1050,11 +1050,14 @@ var UI = new (function UI() {
                     row.addClass(priClasses[task.pri]);
                     row.append($("<td>" + (index + 1) + "</td>"));
                     var title = $("<td>" + ui.escape(task.title) + " </td>");
-                    var btnDetails = $("<button class='btn btn-xs btn-default'>...</button>");
-                    btnDetails.on("click", function(e) {
-                        $("#listTasksDesc" + index).prop("style").display = ($("#listTasksDesc" + index).prop("style").display === "table-row") ? "none" : "table-row";
-                    });
-                    title.append(btnDetails);
+                    // if task has a description, show details button
+                    if (task.desc) {
+                        var btnDetails = $("<button class='btn btn-xs btn-default'>...</button>");
+                        btnDetails.on("click", function(e) {
+                            $("#listTasksDesc" + index).prop("style").display = ($("#listTasksDesc" + index).prop("style").display === "table-row") ? "none" : "table-row";
+                        });
+                        title.append(btnDetails);
+                    }
                     row.append(title);
                     row.append($("<td>" + task.pri + "</td>"));
                     row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
@@ -1174,10 +1177,12 @@ var UI = new (function UI() {
                     controls.append(btnDelete);
                     row.append(controls);
                     $("#listTasks").append(row);
-                    // description row
-                    var descRow = $("<tr id='listTasksDesc" + index + "' style='display: none;'/>");
-                    descRow.append($("<td colspan='7'/>").html(task.desc ? ui.escape(task.desc) : "<em>No description specified.</em>"));
-                    $("#listTasks").append(descRow);
+                    // if task has a description, add description row
+                    if (task.desc) {
+                        var descRow = $("<tr id='listTasksDesc" + index + "' style='display: none;'/>");
+                        descRow.append($("<td colspan='7'/>").html(task.desc ? ui.escape(task.desc) : "<em>No description specified.</em>"));
+                        $("#listTasks").append(descRow);
+                    }
                 });
             // no user tasks, show column spanning information message
             } else {
