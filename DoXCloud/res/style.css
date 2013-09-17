@@ -1,6 +1,12 @@
 body {
     padding-top: 78px;
 }
+.modal-body {
+    padding-bottom: 10px;
+}
+.modal-footer {
+    margin-top: 0;
+}
 .table-stack {
     width: 100%;
 }

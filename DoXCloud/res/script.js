@@ -140,7 +140,7 @@ $(document).ready(function() {
                 }
             };
             // separate processing to defer if user input is required
-            var process = function(file, isTasks) {
+            var process = function(file, isTasks, noParse) {
                 // read the file
                 var reader = new FileReader;
                 reader.readAsText(file);
@@ -152,6 +152,13 @@ $(document).ready(function() {
                         if (item) {
                             // create the task
                             var task = new Task(item);
+                            // if not parsing, just pass line in as title
+                            if (noParse) {
+                                task = new Task({
+                                    title: item
+                                });
+                            }
+                            // if the task was created, store it
                             if (task) {
                                 (isTasks ? DoX.tasks : DoX.done).push(task);
                                 count++;
@@ -185,13 +192,14 @@ $(document).ready(function() {
     $("#modalImportTypeTasks, #modalImportTypeDone").on("click", function(e) {
         var file = $("#modalImportType").data("file");
         var process = $("#modalImportType").data("process");
-        process(file, this.id === "modalImportTypeTasks");
+        process(file, this.id === "modalImportTypeTasks", $("#modalImportTypeNoParse").prop("checked"));
         $("#modalImportType").modal("hide");
     });
     // clean up modal data
     $("#modalImportType").on("hidden.bs.modal", function(e) {
         $("#modalImportType").removeData("file");
         $("#modalImportType").removeData("process");
+        $("#modalImportTypeNoParse").prop("checked", false);
     });
     // turn tag field in add task window into a tag editor field
     $("#modalAddTags, #modalEditTags").tagsInput({
@@ -387,12 +395,18 @@ $(document).ready(function() {
             for (var x in tasks) {
                 // ignore prototype methods
                 if (tasks.hasOwnProperty(x)) {
+                    // if not parsing, create a task from the common part, then override title
+                    var noParse = $("#modalAddNoParse").prop("checked");
                     // add common part first, then override parameters with custom parts
-                    var str = (common ? common + " " : "") + tasks[x];
+                    var str = (common ? common : "") + " " + (noParse ? "" : tasks[x]);
                     // use the Task constructor to parse
                     var task = new Task(str);
                     // if valid, add the task
                     if (task) {
+                        // replace title if no parse
+                        if (noParse) {
+                            task.title = tasks[x];
+                        }
                         DoX.addTask(task);
                         valid++;
                     }
@@ -686,6 +700,15 @@ $(document).ready(function() {
 });
 // Task object constructor
 function Task(params) {
+    // skeleton task
+    var opts = {
+        title: "",
+        desc: "",
+        pri: 0,
+        due: false,
+        repeat: false,
+        tags: []
+    };
     switch (typeof params) {
         // passed a DoX string, need to parse
         case "string":
@@ -695,15 +718,6 @@ function Task(params) {
             if (!args) {
                 return false;
             }
-            // skeleton task params
-            params = {
-                title: "",
-                desc: "",
-                pri: 0,
-                due: false,
-                repeat: false,
-                tags: []
-            };
             // first generic parameter regarded as task title
             needTitle = true;
             for (var x in args) {
@@ -712,19 +726,19 @@ function Task(params) {
                     var arg = args[x];
                     // $ identifier (hex)
                     if (arg.match(/^\$[0-9a-f]{5}$/)) {
-                        params.id = arg.substr(1);
+                        opts.id = arg.substr(1);
                     // ~ description
                     } else if (arg[0] === "~" && arg.length > 1) {
-                        params.desc = arg.substr(1).replace(/\|/g, "\n");
+                        opts.desc = arg.substr(1).replace(/\|/g, "\n");
                     // ! priority (numerical)
                     } else if (arg.match(/^![0-3]$/)) {
-                        params.pri = parseInt(arg[1]);
+                        opts.pri = parseInt(arg[1]);
                     // ! priority (bang)
                     } else if (arg.match(/!{1,3}$/)) {
-                        params.pri = arg.length;
+                        opts.pri = arg.length;
                     // 0 (zero) priority
                     } else if (arg === "0") {
-                        params.pri = 0;
+                        opts.pri = 0;
                     // @ due date
                     } else if (arg[0] === "@" && arg.length > 1) {
                         var keywords = arg.substr(1).toLowerCase().split("|");
@@ -732,7 +746,7 @@ function Task(params) {
                             keywords.push("");
                         }
                         // parse date/time keywords
-                        params.due = Task.parseDue(keywords);
+                        opts.due = Task.parseDue(keywords);
                     // & repeat
                     } else if (arg[0] === "&" && arg.length > 1) {
                         var days = arg.substr(1);
@@ -757,7 +771,7 @@ function Task(params) {
                             }
                         }
                         if (days) {
-                            params.repeat = {
+                            opts.repeat = {
                                 days: days,
                                 fromDue: fromDue
                             };
@@ -765,46 +779,40 @@ function Task(params) {
                     // # tags
                     } else if (arg[0] === "#" && arg.length > 1) {
                         tag = arg.substr(1);
-                        if (!params.tags.has(tag.toLowerCase(), true)) {
-                            params.tags.push(tag);
+                        if (!opts.tags.has(tag.toLowerCase(), true)) {
+                            opts.tags.push(tag);
                         }
                     // generic
                     } else if (needTitle) {
-                        params.title = arg;
+                        opts.title = arg;
                         needTitle = false;
                     }
                 }
             }
             // can't repeat without due date
-            if (params.repeat && !params.due) {
-                params.due = {
+            if (opts.repeat && !opts.due) {
+                opts.due = {
                     date: new Date(),
                     time: false
                 };
-                params.due.date.setHours(0);
-                params.due.date.setMinutes(0);
-                params.due.date.setSeconds(0);
+                opts.due.date.setHours(0);
+                opts.due.date.setMinutes(0);
+                opts.due.date.setSeconds(0);
             }
             break;
-        // no parameters, create a blank task
-        case "undefined":
-            params = {
-                title: "",
-                desc: "",
-                pri: 0,
-                due: false,
-                repeat: false,
-                tags: []
-            };
+        // a full or partial params object, use extend to merge
+        case "object":
+            $.extend(opts, params);
             break;
+        // ignore all other types, just create a blank task
     }
     // set new fields
-    this.title = params.title;
-    this.desc = params.desc;
-    this.pri = params.pri;
-    this.due = params.due;
-    this.repeat = params.repeat;
-    this.tags = params.tags;
+    this.title = opts.title;
+    this.desc = opts.desc;
+    this.pri = opts.pri;
+    this.due = opts.due;
+    this.repeat = opts.repeat;
+    this.tags = opts.tags;
 }
 // build Task prototype
 Task.prototype = {
