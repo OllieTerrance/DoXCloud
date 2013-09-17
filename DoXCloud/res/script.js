@@ -97,7 +97,7 @@ $(document).ready(function() {
         return quoteOpen ? false : out;
     }
     // handler for navbar links to select clicked item, deselect others
-    $("#tabList a").on("click", function() {
+    $("#tabList a").on("click", function(e) {
         // get hash part from link href
         var id = this.hash.substr(1);
         // map all links in menu
@@ -115,6 +115,83 @@ $(document).ready(function() {
         UI.listRefresh();
         // don't follow hash link
         return false;
+    });
+    // start import wizard from menu
+    $("#drpImport").on("click", function(e) {
+        $("#hdnImport").click();
+        e.preventDefault();
+    });
+    // when new files are selected, import them
+    $("#hdnImport").on("change", function(e) {
+        // if the user selected a file
+        if (this.files.length) {
+            // count number of tasks added
+            var count = 0;
+            // callback once file has been processed
+            var callback = function() {
+                // reset file input
+                $("#frmImport").get(0).reset();
+                DoX.saveTasks();
+                UI.listRefresh();
+                if (count) {
+                    UI.alerts.add("Imported <strong>" + count + "</strong> task" + (count > 1 ? "s" : "") + ".", "success", "task", true, 3000);
+                } else {
+                    UI.alerts.add("Failed to import any tasks...  are you sure it was a valid task file?", "warning", "task", true, 3000);
+                }
+            };
+            // separate processing to defer if user input is required
+            var process = function(file, isTasks) {
+                // read the file
+                var reader = new FileReader;
+                reader.readAsText(file);
+                reader.onload = function() {
+                    // split into task lines
+                    var lines = reader.result.split("\n");
+                    $.each(lines, function(index, item) {
+                        // ignore blank lines
+                        if (item) {
+                            // create the task
+                            var task = new Task(item);
+                            if (task) {
+                                (isTasks ? DoX.tasks : DoX.done).push(task);
+                                count++;
+                            }
+                        }
+                    });
+                    // return to callback
+                    callback();
+                };
+            };
+            // get file
+            var file = this.files.item(0);
+            // if a text file
+            if (file.type === "text/plain") {
+                // known file name, import
+                if (["tasks.txt", "done.txt"].has(file.name)) {
+                    process(file, file.name === "tasks.txt");
+                // ask user which collection to import to
+                } else {
+                    $("#modalImportType").data("file", file);
+                    $("#modalImportType").data("process", process);
+                    $("#modalImportType").modal("show");
+                }
+            // can't do anything with it
+            } else {
+                $("#modalImportInvalid").modal("show");
+            }
+        }
+    });
+    // handler for when user chooses which collection
+    $("#modalImportTypeTasks, #modalImportTypeDone").on("click", function(e) {
+        var file = $("#modalImportType").data("file");
+        var process = $("#modalImportType").data("process");
+        process(file, this.id === "modalImportTypeTasks");
+        $("#modalImportType").modal("hide");
+    });
+    // clean up modal data
+    $("#modalImportType").on("hidden.bs.modal", function(e) {
+        $("#modalImportType").removeData("file");
+        $("#modalImportType").removeData("process");
     });
     // turn tag field in add task window into a tag editor field
     $("#modalAddTags, #modalEditTags").tagsInput({
