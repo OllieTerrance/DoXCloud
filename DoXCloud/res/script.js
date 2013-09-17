@@ -1393,8 +1393,9 @@ var UI = new (function UI() {
             if (type) {
                 alert.addClass("alert-" + type);
             }
-            // add tag if defined
+            // add tag and clear existing if defined
             if (tag) {
+                $(".notif-" + tag).remove();
                 alert.addClass("notif-" + tag);
             }
             // default to true if undefined
