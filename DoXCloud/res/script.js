@@ -178,28 +178,48 @@ $(document).ready(function() {
                     process(file, file.name === "tasks.txt");
                 // ask user which collection to import to
                 } else {
-                    $("#modalImportType").data("file", file);
-                    $("#modalImportType").data("process", process);
-                    $("#modalImportType").modal("show");
+                    var noParseCheck = $("<input id='modalImportTypeNoParse' type='checkbox'/>");
+                    UI.modal({
+                        title: "Import",
+                        body: $("<div>").append("<p>This file seems to have an unexpected filename (it is neither <strong>tasks.txt</strong>, nor <strong>done.txt</strong>).  Would you like to import its contents into your current task list, or your completed tasks?</p>")
+                                        .append($("<label>").append(noParseCheck)
+                                                            .append("<span> Treat this file as plain text (don't parse, one task title per line).</span>"))
+                                        .children(),
+                        footer: [
+                            {
+                                text: "Import to Tasks",
+                                style: "btn-primary",
+                                dismiss: true,
+                                callback: function(e) {
+                                    process(file, true, noParseCheck.prop("checked"));
+                                }
+                            }, {
+                                text: "Import to Done",
+                                style: "btn-primary",
+                                dismiss: true,
+                                callback: function(e) {
+                                    process(file, false, noParseCheck.prop("checked"));
+                                }
+                            }, {
+                                text: "Cancel",
+                                style: "btn-default",
+                                dismiss: true
+                            }
+                        ]
+                    }).on("hidden.bs.modal", function(e) {
+                        $("#modalImportType").removeData("file");
+                        $("#modalImportType").removeData("process");
+                        $("#modalImportTypeNoParse").prop("checked", false);
+                    });
                 }
             // can't do anything with it
             } else {
-                $("#modalImportInvalid").modal("show");
+                UI.modal({
+                    title: "Import",
+                    body: "<p>This file doesn't appear to be a valid text file.</p>"
+                });
             }
         }
-    });
-    // handler for when user chooses which collection
-    $("#modalImportTypeTasks, #modalImportTypeDone").on("click", function(e) {
-        var file = $("#modalImportType").data("file");
-        var process = $("#modalImportType").data("process");
-        process(file, this.id === "modalImportTypeTasks", $("#modalImportTypeNoParse").prop("checked"));
-        $("#modalImportType").modal("hide");
-    });
-    // clean up modal data
-    $("#modalImportType").on("hidden.bs.modal", function(e) {
-        $("#modalImportType").removeData("file");
-        $("#modalImportType").removeData("process");
-        $("#modalImportTypeNoParse").prop("checked", false);
     });
     // turn tag field in add task window into a tag editor field
     $("#modalAddTags, #modalEditTags").tagsInput({
@@ -1294,6 +1314,75 @@ var UI = new (function UI() {
     // shorthand to escape HTML entities
     this.escape = function escape(str) {
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>");
+    };
+    // method for creating on-the-fly Bootstrap modal dialogs
+    this.modal = function modal(params) {
+        // default modal options
+        var opts = {
+            header: true,
+            footer: [{
+                text: "Ok",
+                style: "btn-primary",
+                dismiss: true,
+                callback: false
+            }],
+            close: true,
+            title: "",
+            body: "",
+            options: {}
+        };
+        // apply parameters
+        $.extend(opts, params);
+        // start making the modal
+        var root = $("<div class='modal fade'/>");
+        var dialog = $("<div class='modal-dialog'>");
+        var content = $("<div class='modal-content'/>");
+        // show a header
+        if (opts.header) {
+            var header = $("<div class='modal-header'/>");
+            // show a close button
+            if (opts.close) {
+                header.append("<button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>");
+            }
+            // add title
+            header.append("<h4 class='modal-title'>" + opts.title + "</h4>");
+            content.append(header);
+        }
+        // add body
+        var body = $("<div class='modal-body'/>");
+        body.append(opts.body);
+        content.append(body);
+        // show a footer
+        if (opts.footer && opts.footer.length) {
+            var footer = $("<div class='modal-footer'/>");
+            // add buttons to the footer
+            $.each(opts.footer, function(index, item) {
+                var button = $("<button type='button' class='btn'>" + item.text + "</button>");
+                // custom button class
+                if (item.style) {
+                    button.addClass(item.style);
+                }
+                // dismiss modal on click
+                if (item.dismiss) {
+                    button.attr("data-dismiss", "modal");
+                }
+                // custom callback
+                if (item.callback) {
+                    button.on("click", item.callback);
+                }
+                // add footer
+                footer.append(button);
+            });
+            content.append(footer);
+        }
+        // create modal
+        dialog.append(content);
+        root.append(dialog);
+        root.modal(opts.options);
+        root.on("hidden.bs.modal", function(e) {
+            root.remove();
+        });
+        return root;
     };
     // subclass for managing Bootstrap alerts
     this.alerts = {
