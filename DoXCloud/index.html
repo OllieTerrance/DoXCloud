@@ -391,6 +391,9 @@
                 </div>
             </div>
         </div>
+        <form id="frmImport">
+            <input id="hdnImport" type="file"/>
+        </form>
         <div id="modalExport" class="modal fade">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -406,6 +409,12 @@
                         <div class="form-group">
                             <label for="edtExportDone">done.txt</label>
                             <textarea id="edtExportDone" class="form-control" rows="5"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input id="modalExportIDs" type="checkbox"/>
+                                <span>Include task IDs in export</span>
+                            </label>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -431,9 +440,6 @@
                 </div>
             </div>
         </div>-->
-        <form id="frmImport">
-            <input id="hdnImport" type="file"/>
-        </form>
         <script type="text/javascript" src="res/jquery-1.10.2.min.js"></script>
         <script type="text/javascript" src="res/bootstrap.min.js"></script>
         <script type="text/javascript" src="res/jquery.tagsinput.min.js"></script>

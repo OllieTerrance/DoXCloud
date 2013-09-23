@@ -661,8 +661,21 @@ $(document).ready(function() {
     });
     // prefill export data on modal show
     $("#modalExport").on("show.bs.modal", function(e) {
+        Task.showIDs = false;
         $("#edtExportTasks").val(DoX.tasks.join("\n"));
         $("#edtExportDone").val(DoX.done.join("\n"));
+        Task.showIDs = true;
+    });
+    // show/hide IDs on checkbox toggle
+    $("#modalExportIDs").on("click", function(e) {
+        Task.showIDs = this.checked;
+        $("#edtExportTasks").val(DoX.tasks.join("\n"));
+        $("#edtExportDone").val(DoX.done.join("\n"));
+        Task.showIDs = true;
+    });
+    // reset show IDs checkbox
+    $("#modalExport").on("hidden.bs.modal", function(e) {
+        $("#modalExportIDs").prop("checked", false);
     });
     // handler for logout option in menu
     $("#modalLogoutConfirm").on("click", function (e) {
@@ -921,13 +934,16 @@ Task.prototype = {
                 }
             }
         }
-        if (this.id) {
+        if (Task.showIDs && this.id) {
             args.push("$" + this.id);
         }
         // return formatted string
         return args.join(" ");
     }
 }
+// include IDs in toString() output
+// - outside of prototype to apply it to constructor rather than instance
+Task.showIDs = true;
 // function to parse a date string into a due param
 // - outside of prototype to apply it to constructor rather than instance
 Task.parseDue = function parseDue(keywords) {
