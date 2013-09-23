@@ -134,9 +134,19 @@ $(document).ready(function() {
                 DoX.saveTasks();
                 UI.listRefresh();
                 if (count) {
-                    UI.alerts.add("Imported <strong>" + count + "</strong> task" + (count > 1 ? "s" : "") + ".", "success", "task", true, 3000);
+                    UI.alerts.add({
+                        message: "Imported <strong>" + count + "</strong> task" + (count > 1 ? "s" : "") + ".",
+                        type: "success",
+                        tag: "task",
+                        autoDismiss: 3000
+                    });
                 } else {
-                    UI.alerts.add("Failed to import any tasks...  are you sure it was a valid task file?", "warning", "task", true, 3000);
+                    UI.alerts.add({
+                        message: "Failed to import any tasks...  are you sure it was a valid task file?",
+                        type: "warning",
+                        tag: "task",
+                        autoDismiss: 3000
+                    });
                 }
             };
             // separate processing to defer if user input is required
@@ -442,11 +452,17 @@ $(document).ready(function() {
             // save and refresh the list
             DoX.saveTasks();
             UI.listRefresh();
+            var opts = {
+                type: "info",
+                tag: "task",
+                autoDismiss: 3000
+            };
             if (typeof task === "object") {
-                UI.alerts.add("Added task <strong>" + UI.escape(task.title) + "</strong>.", "info", "task", true, 3000);
+                opts.message = "Added task <strong>" + UI.escape(task.title) + "</strong>.";
             } else {
-                UI.alerts.add("Added <strong>" + task + "</strong> task" + (task > 1 ? "s" : "") + ".", "info", "task", true, 3000);
+                opts.message = "Added <strong>" + task + "</strong> task" + (task > 1 ? "s" : "") + ".";
             }
+            UI.alerts.add(opts);
         }
     };
     // add when clicking on Add button
@@ -624,7 +640,12 @@ $(document).ready(function() {
         // save and refresh the list
         DoX.saveTasks();
         UI.listRefresh();
-        UI.alerts.add("Updated task <strong>" + UI.escape(task.title) + "</strong>.", "warning", "task", true, 3000);
+        UI.alerts.add({
+            message: "Updated task <strong>" + UI.escape(task.title) + "</strong>.",
+            type: "warning",
+            tag: "task",
+            autoDismiss: 3000
+        });
     });
     // form reset handler on modal close
     $("#modalEdit").on("hidden.bs.modal", function(e) {
@@ -719,16 +740,25 @@ $(document).ready(function() {
         }
     // if not, warn about no saving
     } else {
-        UI.alerts.add("<strong>Warning:</strong> local storage is not available in your browser.  You will not be able to save any tasks locally.", "danger", "store");
+        UI.alerts.add({
+            message: "<strong>Warning:</strong> local storage is not available in your browser.  You will not be able to save any tasks locally.", 
+            type: "danger",
+            tag: "store"
+        });
     }
     // register network status change events
     $(window).on("online offline", function(e) {
         UI.alerts.clear("network");
+        var opts = {
+            type: e.type === "online" ? "success" : "info",
+            tag: network
+        };
         if (e.type === "online") {
-            UI.alerts.add("<strong>Just a heads up:</strong> your internet connection has been restored, and you can continue to work on your tasks as normal.", "success", "network");
+            opts.message = "<strong>Just a heads up:</strong> your internet connection has been restored, and you can continue to work on your tasks as normal.";
         } else {
-            UI.alerts.add("<strong>Just a heads up:</strong> you don't seem to be connected to the internet any more.  No worries, you can just continue to work on your tasks right here.", "info", "network");
+            opts.message = "<strong>Just a heads up:</strong> you don't seem to be connected to the internet any more.  No worries, you can just continue to work on your tasks right here.";
         }
+        UI.alerts.add(opts);
     });
 });
 // Task object constructor
@@ -1219,11 +1249,17 @@ var UI = new (function UI() {
                         DoX.doneTask(index, ui.tab === "tasks");
                         DoX.saveTasks();
                         ui.listRefresh();
+                        var opts = {
+                            type: ui.tab === "tasks" ? "success" : "warning",
+                            tag: "task",
+                            autoDismiss: 3000
+                        };
                         if (ui.tab === "tasks") {
-                            ui.alerts.add("Marked task <strong>" + ui.escape(DoX.done[DoX.done.length - 1].title) + "</strong> as complete.  Well done!", "success", "task", true, 3000);
+                            opts.message = "Marked task <strong>" + ui.escape(DoX.done[DoX.done.length - 1].title) + "</strong> as complete.  Well done!";
                         } else {
-                            ui.alerts.add("Unmarked task <strong>" + ui.escape(DoX.tasks[DoX.tasks.length - 1].title) + "</strong> as complete.  Oh...", "warning", "task", true, 3000);
+                            opts.message = "Unmarked task <strong>" + ui.escape(DoX.tasks[DoX.tasks.length - 1].title) + "</strong> as complete.  Oh...";
                         }
+                        ui.alerts.add(opts);
                     });
                     controls.append(btnDone);
                     // edit button if not yet marked complete
@@ -1320,7 +1356,12 @@ var UI = new (function UI() {
                         DoX.deleteTask(index, ui.tab === "tasks");
                         DoX.saveTasks();
                         ui.listRefresh();
-                        ui.alerts.add("Deleted task <strong>" + ui.escape(title) + "</strong>.  Oh...", "danger", "task", true, 3000);
+                        ui.alerts.add({
+                            message: "Deleted task <strong>" + ui.escape(title) + "</strong>.  Oh...",
+                            type: "danger",
+                            tag: "task",
+                            autoDismiss: 3000
+                        });
                     });
                     controls.append(btnDelete);
                     row.append(controls);
@@ -1421,28 +1462,28 @@ var UI = new (function UI() {
     // subclass for managing Bootstrap alerts
     this.alerts = {
         // add an alert to the notification box
-        add: function add(message, type, tag, dismissable, autoDismiss) {
+        add: function add(opts) {
             var alert = $("<div class='alert alert-dismissable fade in'>");
             // add class if defined
-            if (type) {
-                alert.addClass("alert-" + type);
+            if (opts.type) {
+                alert.addClass("alert-" + opts.type);
             }
             // add tag and clear existing if defined
-            if (tag) {
-                $(".notif-" + tag).remove();
-                alert.addClass("notif-" + tag);
+            if (opts.tag) {
+                $(".notif-" + opts.tag).remove();
+                alert.addClass("notif-" + opts.tag);
             }
             // default to true if undefined
-            if (dismissable !== false) {
+            if (opts.dismissable !== false) {
                 alert.append($("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>"));
             }
             // auto-dismiss after given time if specified
-            if (autoDismiss) {
+            if (opts.autoDismiss) {
                 setTimeout(function() {
                     alert.alert("close");
-                }, autoDismiss);
+                }, opts.autoDismiss);
             }
-            alert.append($("<span>" + message + "</span>"));
+            alert.append($("<span/>").append(opts.message));
             $("#notifBox").append(alert);
         },
         // clear all alerts, or ones with a specific type (class)
