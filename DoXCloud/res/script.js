@@ -722,6 +722,7 @@ $(document).ready(function() {
 function Task(params) {
     // skeleton task
     var opts = {
+        id: null,
         title: "",
         desc: "",
         pri: 0,
@@ -826,7 +827,23 @@ function Task(params) {
             break;
         // ignore all other types, just create a blank task
     }
+    // generate ID if not set
+    if (!opts.id) {
+        var tasks = DoX.tasks.concat(DoX.done);
+        // list of IDs in use
+        var used = [];
+        for (var x in tasks) {
+            if (tasks[x].id && !used.has(tasks[x].id)) {
+                used.push(tasks[x].id);
+            }
+        }
+        opts.id = DoX.newID();
+        while (used.has(opts.id)) {
+            opts.id = newID();
+        }
+    }
     // set new fields
+    this.id = opts.id;
     this.title = opts.title;
     this.desc = opts.desc;
     this.pri = opts.pri;
@@ -1118,6 +1135,7 @@ var DoX = new (function DoX() {
     }
     // generate IDs for all tasks
     this.fixIDs = function fixIDs() {
+        var tasks = this.tasks.concat(this.done);
         // list of IDs in use
         var used = [];
         // list of task objects to generate IDs for
@@ -1131,7 +1149,7 @@ var DoX = new (function DoX() {
         }
         for (var x in toGen) {
             // generate a new ID
-            toGen[x].id = newID();
+            toGen[x].id = this.newID();
             while (used.has(toGen[x].id)) {
                 toGen[x].id = newID();
             }
