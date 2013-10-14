@@ -1211,15 +1211,28 @@ var UI = new (function UI() {
     // build task list table
     this.listRefresh = function listRefresh() {
         // clear all table rows, except for headers
-        $("#listTasks tbody").children().map(function(index, item) {
-            if (item.id !== "listTasksHead") {
-                item.remove();
-            }
-        });
+        $("#listTasks tbody").children().remove();
         // anonymous function to avoid scoping issue on this.tab
         (function(tasks, ui) {
             // user has tasks, display them
             if (tasks.length) {
+                // write header row
+                var columns = ["#", "Task", "Priority", "Due"];
+                if (ui.tab === "tasks") {
+                    columns.push("Repeat");
+                }
+                columns.push("Tags", "Controls");
+                var header = $("<tr/>");
+                $(columns).each(function(index, item) {
+                    var cell = $("<th>" + item + "</th>");
+                    if (item === "#") {
+                        cell.prop("style").width = "40px";
+                    } else if (item === "Controls") {
+                        cell.prop("style").width = (ui.tab === "tasks" ? "222px" : "122px");
+                    }
+                    header.append(cell);
+                });
+                $("#listTasks").append(header);
                 $(tasks).each(function(index, item) {
                     var task = item;
                     var row = $("<tr/>");
@@ -1239,7 +1252,9 @@ var UI = new (function UI() {
                     row.append(title);
                     row.append($("<td>" + task.pri + "</td>"));
                     row.append($("<td>" + (task.due ? task.formatDue() : "<em>None</em>") + "</td>"));
-                    row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
+                    if (ui.tab === "tasks") {
+                        row.append($("<td>" + (task.repeat ? task.formatRepeat() : "<em>None</em>") + "</td>"));
+                    }
                     row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
                     var controls = $("<td/>");
                     // button to mark as done (green) or undo (white)
