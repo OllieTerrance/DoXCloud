@@ -40,6 +40,18 @@ table button {
     width: 20%;
     text-align: right;
 }
+tr.row-info {
+    background-color: #d9edf7;
+}
+tr.row-success {
+    background-color: #dff0d8;
+}
+tr.row-warning {
+    background-color: #fcf8e3;
+}
+tr.row-danger {
+    background-color: #f2dede;
+}
 ul.dropdown-menu li {
     text-align: left;
     cursor: pointer;

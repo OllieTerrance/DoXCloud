@@ -86,7 +86,7 @@
         </div>
         <div class="container">
             <div id="notifBox"></div>
-            <table id="listTasks" class="table table-bordered table-striped table-stack-large">
+            <table id="listTasks" class="table table-bordered table-stack-large">
                 <tr>
                     <td colspan="7">Loading tasks...</td>
                 </tr>
@@ -369,12 +369,22 @@
                     <div class="modal-body">
                         <form id="modalSettingsFields" class="form-horizontal" role="form">
                             <div class="form-group">
-                                <label for="optAddWindowDefaultLayout" class="col-lg-6 control-label">Add task window default layout</label>
+                                <label for="optAddTaskDefaultLayout" class="col-lg-6 control-label">Add task window default layout</label>
                                 <div class="col-lg-5">
-                                    <select id="optAddWindowDefaultLayout" class="form-control">
-                                        <option value="Fields">All Fields</option>
-                                        <option value="Quick">Quick Add</option>
-                                        <option value="Multi">Multi Add</option>
+                                    <select id="optAddTaskDefaultLayout" class="form-control">
+                                        <option value="fields">All Fields</option>
+                                        <option value="quick">Quick Add</option>
+                                        <option value="multi">Multi Add</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="optTaskTableRowHighlight" class="col-lg-6 control-label">Task table row highlighting</label>
+                                <div class="col-lg-5">
+                                    <select id="optTaskTableRowHighlight" class="form-control">
+                                        <option value="none">None</option>
+                                        <option value="pri">Priority</option>
+                                        <option value="due">Due</option>
                                     </select>
                                 </div>
                             </div>

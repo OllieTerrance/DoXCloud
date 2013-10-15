@@ -4,6 +4,15 @@ $(document).ready(function() {
     Array.prototype.has = function has(item) {
         return this.indexOf(item) >= 0;
     };
+    // Date.setHMS: set hours, minutes, seconds and milliseconds together
+    Date.prototype.setHMS = function setHMS(hour, minute, second, millisecond) {
+        this.setHours(hour);
+        this.setMinutes(minute);
+        this.setSeconds(second);
+        if (!isNaN(millisecond)) {
+            this.setMilliseconds(millisecond);
+        }
+    };
     // Date.format: pretty prints a date according to any format
     Date.prototype.format = function format(pattern) {
         // default pattern if none specified
@@ -25,6 +34,19 @@ $(document).ready(function() {
                       .split("SS").join(pad(this.getSeconds()))                     // padded second
                       .split("S").join(this.getSeconds());                          // plain second
     }
+    // String.toSentenceCase: capitalize first letter of each word
+    String.prototype.toSentenceCase = function toSentenceCase() {
+        var parts = this.split(" ");
+        for (var x in parts) {
+            // ignore prototype methods
+            if (parts.hasOwnProperty(x)) {
+                // capitalize first letter, keep the rest
+                parts[x] = parts[x][0].toUpperCase() + parts[x].substr(1);
+            }
+        }
+        // return the new string
+        return parts.join(" ");
+    };
     // String.shlex: equivalent to Python's "shlex.split" method
     String.prototype.shlex = function shlex() {
         // default to splitting by space
@@ -325,7 +347,7 @@ $(document).ready(function() {
     };
     // update from default layout setting on show
     $("#modalAdd").on("show.bs.modal", function(e) {
-        addLayoutSwitch("modalAddToggle" + DoX.settings.addTaskDefaultLayout);
+        addLayoutSwitch("modalAddToggle" + DoX.settings.addTaskDefaultLayout.toSentenceCase());
     });
     // update when a new selection is made
     $("#modalAddToggleFields, #modalAddToggleQuick, #modalAddToggleMulti").on("click", function(e) {
@@ -366,7 +388,7 @@ $(document).ready(function() {
                     params.due.date.setDate(params.due.date.getDate() + 1);
                     break;
                 case "week":
-                    params.due.date.setDate(params.due.date.getDate() + 1);
+                    params.due.date.setDate(params.due.date.getDate() + 7);
                     break;
                 case "custom":
                     // custom due date, read fields
@@ -378,14 +400,15 @@ $(document).ready(function() {
             // due date but no time
             if (params.due && !params.due.time) {
                 // clear time values
-                params.due.date.setHours(0);
-                params.due.date.setMinutes(0);
-                params.due.date.setSeconds(0);
+                params.due.date.setHMS(0, 0, 0, 0);
             }
             // use preset values for repeat
             switch ($("#modalAddRepeatPreset").val()) {
                 case "none":
                     params.repeat = false;
+                    break;
+                case "day":
+                    params.repeat.days = 1;
                     break;
                 case "week":
                     params.repeat.days = 7;
@@ -600,7 +623,7 @@ $(document).ready(function() {
                 task.due.date.setDate(task.due.date.getDate() + 1);
                 break;
             case "week":
-                task.due.date.setDate(task.due.date.getDate() + 1);
+                task.due.date.setDate(task.due.date.getDate() + 7);
                 break;
             case "custom":
                 // custom due date, read fields
@@ -612,14 +635,15 @@ $(document).ready(function() {
         // due date but no time
         if (task.due && !task.due.time) {
             // clear time values
-            task.due.date.setHours(0);
-            task.due.date.setMinutes(0);
-            task.due.date.setSeconds(0);
+            task.due.date.setHMS(0, 0, 0, 0);
         }
         // use preset values for repeat
         switch ($("#modalEditRepeatPreset").val()) {
             case "none":
                 task.repeat = false;
+                break;
+            case "day":
+                task.repeat.days = 1;
                 break;
             case "week":
                 task.repeat.days = 7;
@@ -670,14 +694,17 @@ $(document).ready(function() {
     });
     // prefill user settings on modal show
     $("#modalSettings").on("show.bs.modal", function(e) {
-        $("#optAddWindowDefaultLayout").val(DoX.settings.addTaskDefaultLayout);
+        $("#optAddTaskDefaultLayout").val(DoX.settings.addTaskDefaultLayout);
+        $("#optTaskTableRowHighlight").val(DoX.settings.taskTableRowHighlight);
     });
     // handler for updating settings
     $("#modalSettingsSave").on("click", function(e) {
         DoX.settings = {
-            addTaskDefaultLayout: $("#optAddWindowDefaultLayout").val()
+            addTaskDefaultLayout: $("#optAddTaskDefaultLayout").val(),
+            taskTableRowHighlight: $("#optTaskTableRowHighlight").val()
         };
         DoX.saveSettings();
+        UI.listRefresh();
         $("#modalSettings").modal("hide");
     });
     // prefill export data on modal show
@@ -724,10 +751,7 @@ $(document).ready(function() {
     if (Store.has) {
         // no data yet, show first run dialog
         if (typeof Store.get("settings") === "undefined") {
-            DoX.settings = {
-                addTaskDefaultLayout: "Fields"
-            };
-            DoX.saveSettings();
+            DoX.settings = {};
             Store.set("taskCount", "0");
             Store.set("doneCount", "0");
             UI.listRefresh();
@@ -738,6 +762,12 @@ $(document).ready(function() {
             DoX.loadTasks();
             UI.listRefresh();
         }
+        // merge unset or new setting defaults
+        DoX.settings = $.extend({}, {
+            addTaskDefaultLayout: "fields",
+            taskTableRowHighlight: "none"
+        }, DoX.settings);
+        DoX.saveSettings();
     // if not, warn about no saving
     } else {
         UI.alerts.add({
@@ -859,9 +889,7 @@ function Task(params) {
                     date: new Date(),
                     time: false
                 };
-                opts.due.date.setHours(0);
-                opts.due.date.setMinutes(0);
-                opts.due.date.setSeconds(0);
+                opts.due.date.setHMS(0, 0, 0, 0);
             }
             break;
         // a full or partial params object, use extend to merge
@@ -1000,9 +1028,7 @@ Task.parseDue = function parseDue(keywords) {
         "sun": 6
     }
     var today = new Date();
-    today.setHours(0);
-    today.setMinutes(0);
-    today.setSeconds(0);
+    today.setHMS(0, 0, 0, 0);
     var thisDate;
     // basic string understanding
     switch (date) {
@@ -1039,7 +1065,7 @@ Task.parseDue = function parseDue(keywords) {
                 if (parts[0]) {
                     thisDate.setDate(parts[0]);
                     if (parts[1]) {
-                        thisDate.setMonth(parts[1]);
+                        thisDate.setMonth(parts[1] - 1);
                         if (parts[2]) {
                             thisDate.setFullYear(parts[2]);
                         }
@@ -1083,9 +1109,7 @@ Task.parseDue = function parseDue(keywords) {
             // valid time calculated
             if (thisTime && !isNaN(thisTime)) {
                 // update date object
-                thisDate.setHours(thisTime.getHours());
-                thisDate.setMinutes(thisTime.getMinutes());
-                thisDate.setSeconds(thisTime.getSeconds());
+                thisDate.setHMS(thisTime.getHours(), thisTime.getMinutes(), thisTime.getSeconds());
                 due = {
                     date: thisDate,
                     time: true
@@ -1222,7 +1246,7 @@ var UI = new (function UI() {
                     columns.push("Repeat");
                 }
                 columns.push("Tags", "Controls");
-                var header = $("<tr/>");
+                var header = $("<tr class='active'/>");
                 $(columns).each(function(index, item) {
                     var cell = $("<th>" + item + "</th>");
                     if (item === "#") {
@@ -1236,9 +1260,36 @@ var UI = new (function UI() {
                 $(tasks).each(function(index, item) {
                     var task = item;
                     var row = $("<tr/>");
-                    // style row according to priority
-                    var priClasses = ["active", "success", "warning", "danger"];
-                    row.addClass(priClasses[task.pri]);
+                    // style row according to row highlight setting
+                    var highlights = ["success", "warning", "danger"];
+                    var prop = -1;
+                    switch (DoX.settings.taskTableRowHighlight) {
+                        case "pri":
+                            prop = task.pri - 1;
+                            break;
+                        case "due":
+                            if (task.due) {
+                                var now = new Date();
+                                if (!task.due.time) {
+                                    now.setHMS(0, 0, 0, 0);
+                                }
+                                if (now > task.due.date) {
+                                    prop = 2;
+                                } else {
+                                    if (Math.floor((task.due.date - now) / (1000 * 60 * 60 * 24)) <= 1) {
+                                        prop = 1;
+                                    } else {
+                                        prop = 0;
+                                    }
+                                }
+                            } else {
+                                prop = -1;
+                            }
+                            break;
+                    }
+                    if (prop >= 0) {
+                        row.addClass("row-" + highlights[prop]);
+                    }
                     row.append($("<td>" + (index + 1) + "</td>"));
                     var title = $("<td>" + ui.escape(task.title) + " </td>");
                     // if task has a description, show details button
@@ -1294,9 +1345,7 @@ var UI = new (function UI() {
                                     $("#modalEditDueTime").removeAttr("disabled");
                                 } else {
                                     var today = new Date();
-                                    today.setHours(0);
-                                    today.setMinutes(0);
-                                    today.setSeconds(0);
+                                    today.setHMS(0, 0, 0, 0);
                                     var offset = (task.due.date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
                                     switch (offset) {
                                         case 0:
