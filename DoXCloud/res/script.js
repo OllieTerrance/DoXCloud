@@ -1288,8 +1288,10 @@ var UI = new (function UI() {
                             if (task.due) {
                                 if (task.due.time) {
                                     $("#modalEditDuePreset").val("custom");
-                                    $("#modalEditDueDate").val(task.due.date.format("dd-mm-yyyy"));
+                                    $("#modalEditDueDate").val(task.due.date.format("yyyy-mm-dd"));
                                     $("#modalEditDueTime").val(task.due.date.format("HH:MM:SS"));
+                                    $("#modalEditDueDate").removeAttr("disabled");
+                                    $("#modalEditDueTime").removeAttr("disabled");
                                 } else {
                                     var today = new Date();
                                     today.setHours(0);
