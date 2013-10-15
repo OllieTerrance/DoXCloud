@@ -1386,7 +1386,8 @@ var UI = new (function UI() {
                     // if task has a description, add description row
                     if (task.desc) {
                         var descRow = $("<tr id='listTasksDesc" + index + "' style='display: none;'/>");
-                        descRow.append($("<td colspan='7'/>").html(task.desc ? ui.escape(task.desc) : "<em>No description specified.</em>"));
+                        var linkRegExp = /(([a-z]+:\/\/)?([a-z\-\+]+\.)+[a-z]{2,6}([\/#?]\S*[^\.,\s\[\]\(\)]))*/g;
+                        descRow.append($("<td colspan='7'/>").html(ui.escape(task.desc).replace(linkRegExp, "<a href=\"$1\">$1</a>")));
                         $("#listTasks").append(descRow);
                     }
                 });
