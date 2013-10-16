@@ -1260,8 +1260,9 @@ var UI = new (function UI() {
         (function(tasks, ui) {
             // user has tasks, display them
             if (tasks.length) {
+                var highlights = ["success", "warning", "danger"];
                 // write header row
-                var columns = ["#", "Task", "Priority", "Due"];
+                var columns = ["&#10003;", "Task", "Priority", "Due"];
                 if (ui.tab === "tasks") {
                     columns.push("Repeat");
                 }
@@ -1269,8 +1270,37 @@ var UI = new (function UI() {
                 var header = $("<tr class='active'/>");
                 $(columns).each(function(index, item) {
                     var cell = $("<th>" + item + "</th>");
-                    if (item === "#") {
-                        cell.prop("style").width = "40px";
+                    if (item === "&#10003;") {
+                        cell.addClass("pos");
+                        // select all handler
+                        cell.on("click", function(e) {
+                            var cells = $("#listTasks td.pos");
+                            var selAll = false;
+                            $.each(cells, function(index, item) {
+                                if (!$(item).parent().hasClass("row-info")) {
+                                    selAll = true;
+                                    return;
+                                }
+                            });
+                            $.each(cells, function(index, item) {
+                                var row = $(item).parent();
+                                var prop = row.data("highlight");
+                                if (selAll) {
+                                    if (prop >= 0) {
+                                        row.removeClass("row-" + highlights[prop]);
+                                    }
+                                    row.addClass("row-info");
+                                    $(this).html("&#10004;");
+                                } else {
+                                    row.removeClass("row-info");
+                                    if (prop >= 0) {
+                                        row.addClass("row-" + highlights[prop]);
+                                    }
+                                    $(this).html(index + 1);
+                                }
+                            });
+                            ui.multiSelect();
+                        });
                     } else if (item === "Controls") {
                         cell.prop("style").width = (ui.tab === "tasks" ? "222px" : "122px");
                     }
@@ -1281,7 +1311,6 @@ var UI = new (function UI() {
                     var task = item;
                     var row = $("<tr/>");
                     // style row according to row highlight setting
-                    var highlights = ["success", "warning", "danger"];
                     var prop = -1;
                     switch (DoX.settings.taskTableRowHighlight) {
                         case "pri":
@@ -1310,13 +1339,39 @@ var UI = new (function UI() {
                     if (prop >= 0) {
                         row.addClass("row-" + highlights[prop]);
                     }
-                    row.append($("<td>" + (index + 1) + "</td>"));
+                    row.data("highlight", prop);
+                    var idCell = $("<td class='pos'>" + (index + 1) + "</td>");
+                    row.append(idCell);
+                    // row selection handler
+                    idCell.on("click", function(e) {
+                        if (row.hasClass("row-info")) {
+                            row.removeClass("row-info");
+                            if (prop >= 0) {
+                                row.addClass("row-" + highlights[prop]);
+                            }
+                            $(this).html(index + 1);
+                        } else {
+                            if (prop >= 0) {
+                                row.removeClass("row-" + highlights[prop]);
+                            }
+                            row.addClass("row-info");
+                            $(this).html("&#10004;");
+                        }
+                        ui.multiSelect();
+                    });
                     var title = $("<td>" + ui.escape(task.title) + " </td>");
                     // if task has a description, show details button
                     if (task.desc) {
                         var btnDetails = $("<button class='btn btn-xs btn-default'>...</button>");
                         btnDetails.on("click", function(e) {
-                            $("#listTasksDesc" + index).prop("style").display = ($("#listTasksDesc" + index).prop("style").display === "table-row") ? "none" : "table-row";
+                            if (row.next().hasClass("desc")) {
+                                row.next().remove();
+                            } else {
+                                var descRow = $("<tr class='desc'/>");
+                                var linkRegExp = /(([a-z]+:\/\/)?([a-z\-\+]+\.)+[a-z]{2,6}([\/#?]\S*[^\.,\s\[\]\(\)]))*/g;
+                                descRow.append($("<td colspan='7'/>").html(ui.escape(task.desc).replace(linkRegExp, "<a href=\"$1\">$1</a>")));
+                                row.after(descRow);
+                            }
                         });
                         title.append(btnDetails);
                     }
@@ -1452,13 +1507,6 @@ var UI = new (function UI() {
                     controls.append(btnDelete);
                     row.append(controls);
                     $("#listTasks").append(row);
-                    // if task has a description, add description row
-                    if (task.desc) {
-                        var descRow = $("<tr id='listTasksDesc" + index + "' style='display: none;'/>");
-                        var linkRegExp = /(([a-z]+:\/\/)?([a-z\-\+]+\.)+[a-z]{2,6}([\/#?]\S*[^\.,\s\[\]\(\)]))*/g;
-                        descRow.append($("<td colspan='7'/>").html(ui.escape(task.desc).replace(linkRegExp, "<a href=\"$1\">$1</a>")));
-                        $("#listTasks").append(descRow);
-                    }
                 });
             // no user tasks, show column spanning information message
             } else {
@@ -1466,12 +1514,89 @@ var UI = new (function UI() {
                 row.append($("<td colspan='7'>No tasks to show.  " + (ui.tab === "tasks" ? "Would you like to <a data-toggle='modal' data-target='#modalAdd' href='#add'>add one</a>?" : "Go and complete some!") + "</td>"));
                 $("#listTasks").append(row);
             }
+            // clear mutliselect alert
+            ui.multiSelect();
         })((this.tab === "tasks" ? DoX.tasks : DoX.done), this);
         // reset table stacking for mobile devices
         $(".table-stack.table-stack-small").remove();
-        $("#listTasks").stacktable({myClass: "table table-bordered table-striped table-stack table-stack-small"});
+        $("#listTasks").stacktable({id: "table-stack-" + this.tab, myClass: "table table-bordered table-striped table-stack table-stack-small"});
         // remove top row, add spacing between task blocks
         $('.table-stack-small tr:empty:nth-child(1)').remove();
+    };
+    // handle multi select status
+    this.multiSelect = function multiSelect() {
+        // make a list of all selected rows
+        var cells = $("#listTasks td.pos");
+        var posList = [];
+        $.each(cells, function(index, item) {
+            if ($(item).parent().hasClass("row-info")) {
+                posList.push(index);
+                return;
+            }
+        });
+        // if at least one row is selected
+        if (posList.length) {
+            var body = $("<span>" + posList.length + " task" + (posList.length > 1 ? "s" : "") + " selected...&nbsp;&nbsp;</span>");
+            // anonymous function to avoid scoping issue on this.tab
+            (function(ui) {
+                // button to mark as done (green) or undo (white)
+                var btnDone = $("<button class='btn btn-xs'>" + (ui.tab === "tasks" ? "Done" : "Undo") + "</button>");
+                btnDone.addClass(ui.tab === "tasks" ? "btn-success" : "btn-default");
+                btnDone.on("click", function(e) {
+                    for (var x in posList) {
+                        if (posList.hasOwnProperty(x)) {
+                            // subtract to adjust as previous ones are taken
+                            DoX.doneTask(posList[x] - x, ui.tab === "tasks");
+                        }
+                    }
+                    DoX.saveTasks();
+                    ui.listRefresh();
+                    var opts = {
+                        type: ui.tab === "tasks" ? "success" : "warning",
+                        tag: "task",
+                        autoDismiss: 3000
+                    };
+                    if (ui.tab === "tasks") {
+                        opts.message = "Marked <strong>" + posList.length + " task" + (posList.length > 1 ? "s" : "") + "</strong> as complete.  Well done!";
+                    } else {
+                        opts.message = "Unmarked <strong>" + posList.length + " task" + (posList.length > 1 ? "s" : "") + "</strong> as complete.  Oh...";
+                    }
+                    ui.alerts.add(opts);
+                    ui.multiSelect();
+                });
+                body.append(btnDone);
+                body.append("&nbsp;");
+                // delete button
+                var btnDelete = $("<button class='btn btn-xs btn-danger'>Delete</button>");
+                btnDelete.on("click", function(e) {
+                    for (var x in posList) {
+                        if (posList.hasOwnProperty(x)) {
+                            // subtract to adjust as previous ones are taken
+                            DoX.deleteTask(posList[x] - x, ui.tab === "tasks");
+                        }
+                    }
+                    DoX.saveTasks();
+                    ui.listRefresh();
+                    ui.alerts.add({
+                        message: "Deleted <strong>" + posList.length + " task" + (posList.length > 1 ? "s" : "") + "</strong>.  Oh...",
+                        type: "danger",
+                        tag: "task",
+                        autoDismiss: 3000
+                    });
+                });
+                body.append(btnDelete);
+            })(this);
+            // show a persistent alert
+            this.alerts.add({
+                type: "info",
+                tag: "multiSelect",
+                dismissable: false,
+                message: body,
+                msgIsElement: true
+            });
+        } else {
+            this.alerts.clear("multiSelect");
+        }
     };
     // shorthand to escape HTML entities
     this.escape = function escape(str) {
@@ -1570,7 +1695,12 @@ var UI = new (function UI() {
                     alert.alert("close");
                 }, opts.autoDismiss);
             }
-            alert.append($("<span/>").append(opts.message));
+            // attach elements directly instead of appending message to a span
+            if (opts.msgIsElement) {
+                alert.append(opts.message);
+            } else {
+                alert.append($("<span/>").append(opts.message));
+            }
             $("#notifBox").append(alert);
         },
         // clear all alerts, or ones with a specific type (class)
