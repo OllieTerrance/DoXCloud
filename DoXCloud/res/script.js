@@ -604,7 +604,7 @@ $(document).ready(function() {
         };
         task.repeat = {
             days: 1,
-            fromDue: $("#modalAddRepeatFrom").val() === "due"
+            fromDue: $("#modalEditRepeatFrom").val() === "due"
         };
         task.pri = parseInt($("#modalEditPri").val());
         task.tags = $("#modalEditTags").val() === "" ? [] : $("#modalEditTags").val().split(",");
@@ -1148,8 +1148,28 @@ var DoX = new (function DoX() {
     this.doneTask = function doneTask(pos, isTasks) {
         isTasks = def(isTasks, true);
         if (isTasks) {
-            // remove task at position from tasks, append to done
-            this.done.push(this.tasks.splice(pos, 1)[0]);
+            // remove task at position from tasks, 
+            var task = this.tasks.splice(pos, 1)[0];
+            // schedule a repeat
+            if (task.repeat) {
+                taskCopy = $.extend({}, task);
+                // repeat from today
+                if (!taskCopy.repeat.fromDue) {
+                    taskCopy.due.date = new Date();
+                    taskCopy.due.date.setHMS(task.due.date.getHours(), task.due.date.getMinutes(), task.due.date.getSeconds());
+                }
+                taskCopy.due.date.setDate(taskCopy.due.date.getDate() + task.repeat.days);
+                // remove original task ID (will receive a new one)
+                task.id = null;
+                // cancel repeat on original task (in case of undo)
+                task.repeat = false;
+                // append to done
+                this.tasks.push(taskCopy);
+            }
+            // append to done
+            this.done.push(task);
+            // fix IDs (in case of task repeat)
+            this.fixIDs();
         } else {
             // remove task at position from done, append to tasks
             this.tasks.push(this.done.splice(pos, 1)[0]);
