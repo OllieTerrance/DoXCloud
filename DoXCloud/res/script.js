@@ -345,8 +345,15 @@ $(document).ready(function() {
             $(blocks[index]).prop("style").display = (show ? "block" : "none");
         });
     };
-    // update from default layout setting on show
+    // handler for on show of add task window
     $("#modalAdd").on("show.bs.modal", function(e) {
+        // do nothing if already open
+        if (this.style.display === "block") {
+            return e.preventDefault();
+        }
+        // hide existing modals
+        $(".modal:not(#modalAdd)").modal("hide");
+        // update from default layout setting on show
         addLayoutSwitch("modalAddToggle" + DoX.settings.addTaskDefaultLayout.toSentenceCase());
     });
     // update when a new selection is made
@@ -1301,8 +1308,6 @@ var UI = new (function UI() {
                             });
                             ui.multiSelect();
                         });
-                    } else if (item === "Controls") {
-                        cell.prop("style").width = (ui.tab === "tasks" ? "222px" : "122px");
                     }
                     header.append(cell);
                 });
@@ -1383,6 +1388,7 @@ var UI = new (function UI() {
                     }
                     row.append($("<td>" + (task.tags.length > 0 ? task.tags.join(", ") : "<em>None</em>") + "</td>"));
                     var controls = $("<td/>");
+                    controls.addClass("controls");
                     // button to mark as done (green) or undo (white)
                     var btnDone = $("<button class='btn btn-xs'>" + (ui.tab === "tasks" ? "Done" : "Undo") + "</button>");
                     btnDone.addClass(ui.tab === "tasks" ? "btn-success" : "btn-default");

@@ -2,7 +2,6 @@
 <html manifest="cache.manifest">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
         <title>DoX &ndash; Task management, your way.</title>
         <meta name="title" content="DoX"/>
         <meta name="description" content="Task management, your way."/>
@@ -35,18 +34,18 @@
                 <div class="navbar-collapse collapse">
                     <ul id="tabList" class="nav navbar-nav">
                         <li id="tabTasks" class="active">
-                            <a href="#tasks">Tasks</a>
+                            <a href="#tasks" accesskey="1">Tasks</a>
                         </li>
                         <li id="tabDone">
-                            <a href="#done">Done</a>
+                            <a href="#done" accesskey="2">Done</a>
                         </li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
                         <li>
-                            <a data-toggle="modal" data-target="#modalAdd" href="#add">Add Task</a>
+                            <a data-toggle="modal" data-target="#modalAdd" href="#add" accesskey="a">Add Task</a>
                         </li>
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Account <b class="caret"></b></a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">More <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 <!--<li class="dropdown-header">Logged in as:<br/><? print($_SESSION["auth"]["email"]); ?></li>-->
                                 <li>
@@ -88,7 +87,7 @@
             <div id="notifBox"></div>
             <table id="listTasks" class="table table-bordered table-stack-large">
                 <tr>
-                    <td colspan="7">Loading tasks...</td>
+                    <td>Loading tasks...</td>
                 </tr>
             </table>
         </div>
@@ -194,7 +193,7 @@
                         <form id="modalAddQuick" class="form-horizontal" role="form" style="display: none;">
                             <div class="form-group">
                                 <div class="col-lg-11">
-                                    <input id="modalAddString" class="form-control" placeholder="&quot;Feed the cat&quot; !2 @tomorrow|13:30 &daily #Home #Cat"/>
+                                    <input id="modalAddString" class="form-control" placeholder="&quot;Feed the cat&quot; !2 @tomorrow|13:30 &amp;daily #Home #Cat"/>
                                 </div>
                                 <div class="col-lg-1 control-label">
                                     <a data-toggle="modal" data-target="#modalHowToWrite" href="#howToWrite">Help?</a>
@@ -210,7 +209,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="modalAddCommon">Common options</label>
-                                    <input id="modalAddCommon" class="form-control" placeholder="!2 @tomorrow|13:30 &daily #Home"/>
+                                    <input id="modalAddCommon" class="form-control" placeholder="!2 @tomorrow|13:30 &amp;daily #Home"/>
                                     <p class="help-block">Any options added here will be applied to all tasks.  You can override them by re-specifying them in a single task.</p>
                                 </div>
                                 <div class="form-group">
