@@ -1542,9 +1542,10 @@ var UI = new (function UI() {
         });
         // if at least one row is selected
         if (posList.length) {
-            var body = $("<span>" + posList.length + " task" + (posList.length > 1 ? "s" : "") + " selected...&nbsp;&nbsp;</span>");
+            var body = $("<span>" + posList.length + " task" + (posList.length > 1 ? "s" : "") + " selected...</span>");
             // anonymous function to avoid scoping issue on this.tab
             (function(ui) {
+                var controls = $("<div class='controls'/>");
                 // button to mark as done (green) or undo (white)
                 var btnDone = $("<button class='btn btn-xs'>" + (ui.tab === "tasks" ? "Done" : "Undo") + "</button>");
                 btnDone.addClass(ui.tab === "tasks" ? "btn-success" : "btn-default");
@@ -1570,8 +1571,7 @@ var UI = new (function UI() {
                     ui.alerts.add(opts);
                     ui.multiSelect();
                 });
-                body.append(btnDone);
-                body.append("&nbsp;");
+                controls.append(btnDone);
                 // delete button
                 var btnDelete = $("<button class='btn btn-xs btn-danger'>Delete</button>");
                 btnDelete.on("click", function(e) {
@@ -1590,7 +1590,8 @@ var UI = new (function UI() {
                         autoDismiss: 3000
                     });
                 });
-                body.append(btnDelete);
+                controls.append(btnDelete);
+                body.append(controls);
             })(this);
             // show a persistent alert
             this.alerts.add({
