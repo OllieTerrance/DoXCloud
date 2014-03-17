@@ -1,13 +1,13 @@
 CACHE MANIFEST
 index.html
-res/bootstrap.min.css
-res/bootstrap.min.js
-res/jquery.stacktable.js
-res/jquery.tagsinput.css
-res/jquery.tagsinput.min.js
-res/jquery-1.10.2.min.js
-res/script.js
-res/style.css
+lib/css/bootstrap.min.css
+lib/css/bootstrap.min.js
+lib/js/jquery.stacktable.js
+lib/css/jquery.tagsinput.css
+lib/js/jquery.tagsinput.min.js
+lib/js/jquery-1.10.2.min.js
+res/js/dox.js
+res/css/dox.css
 http://fonts.googleapis.com/css?family=Open+Sans|Noto+Serif|Oxygen+Mono
 http://themes.googleusercontent.com/static/fonts/notoserif/v1/eCpfeMZI7q4jLksXVRWPQxsxEYwM7FgeyaSgU71cLG0.woff
 http://themes.googleusercontent.com/static/fonts/opensans/v6/cJZKeOuBrn4kERxqtaUH3T8E0i7KZn-EPnyo3HZu7kw.woff
