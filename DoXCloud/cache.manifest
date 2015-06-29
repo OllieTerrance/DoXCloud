@@ -1,8 +1,8 @@
 CACHE MANIFEST
 index.html
 lib/css/bootstrap.min.css
-lib/css/bootstrap.min.js
 lib/css/jquery.tagsinput.css
+lib/js/bootstrap.min.js
 lib/js/jquery.stacktable.js
 lib/js/jquery.tagsinput.min.js
 lib/js/jquery.min.js
